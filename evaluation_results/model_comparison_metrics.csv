@@ -1,0 +1,4 @@
+Model Approach,Test IoU,Test Dice (F1),Test Precision,Test Recall,Pixel Accuracy
+Baseline U-Net (From Scratch),0.1163,0.2083,0.1407,0.468,0.7848
+Transfer Learning U-Net (ResNet-34),0.4833,0.6449,0.6959,0.6446,0.9547
+Conv Autoencoder (Reconstruction Error),0.1554,0.2472,0.2585,0.3255,0.8813
