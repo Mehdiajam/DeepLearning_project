@@ -152,12 +152,19 @@ class ConvAutoencoder(nn.Module):
         reconstruction = self.decoder(latent)
         return reconstruction
 
-    def compute_anomaly_map(self, x):
+    @staticmethod
+    def denorm_to_unit(x):
+        mean = x.new_tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1)
+        std = x.new_tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1)
+        return torch.clamp(x * std + mean, 0.0, 1.0)
+
+    def compute_anomaly_map(self, x, calibrate_unit=False):
         """
         Calculates per-pixel reconstruction error (L1 difference averaged over channels).
         """
         reconstruction = self.forward(x)
-        error = torch.mean(torch.abs(x - reconstruction), dim=1, keepdim=True)
+        target = self.denorm_to_unit(x) if calibrate_unit else x
+        error = torch.mean(torch.abs(target - reconstruction), dim=1, keepdim=True)
         return error
 
 if __name__ == "__main__":
