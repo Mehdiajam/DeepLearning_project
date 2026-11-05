@@ -23,13 +23,18 @@ from models import BaselineUNet, build_transfer_unet, ConvAutoencoder
 from losses import compute_metrics
 
 # =========================================================================
-# Page Configuration (No Emojis)
+# Page Configuration & Theme Initialization (No Emojis)
 # =========================================================================
 st.set_page_config(
     page_title="AV-ANOMALY-WORKBENCH // Road Obstacle Segmentation & Diagnostics",
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+if "theme_mode" not in st.session_state:
+    st.session_state["theme_mode"] = "Dark Cyber Telemetry"
+
+is_light = (st.session_state.get("theme_mode", "Dark Cyber Telemetry") == "Neat Clean Light")
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 FRAMES_DIR = os.path.join(ROOT_DIR, "frames")
@@ -49,89 +54,237 @@ def render_html(html_str: str):
 
 
 # =========================================================================
-# Design System CSS Injection (AV-ANOMALY-WORKBENCH Dark Telemetry Theme)
+# Theme Configuration & Color System
 # =========================================================================
-render_html("""
+if is_light:
+    PALETTE = {
+        "cyan": "#007782",
+        "cyan_bright": "#005b63",
+        "emerald": "#047857",
+        "grey": "#64748b",
+        "red": "#dc2626",
+        "amber": "#b45309",
+        "blue": "#1d4ed8",
+        "text": "#0f172a",
+        "text_muted": "#334155",
+        "bg_paper": "#ffffff",
+        "bg_plot": "#f8fafc",
+        "border": "#cbd5e1",
+        "radar_fill_cyan": "rgba(0, 119, 130, 0.15)",
+        "radar_fill_emerald": "rgba(4, 120, 87, 0.12)",
+        "radar_fill_grey": "rgba(100, 116, 139, 0.12)",
+        "radar_fill_red": "rgba(220, 38, 38, 0.10)",
+    }
+    css_theme_vars = """
+    :root {
+        --bg-main: #f1f5f9;
+        --bg-surface: #ffffff;
+        --bg-panel: #ffffff;
+        --bg-card: #f8fafc;
+        --bg-card-high: #e2e8f0;
+        --border-teal: #cbd5e1;
+        --border-bright: #94a3b8;
+        --cyan-primary: #007782;
+        --cyan-bright: #005b63;
+        --emerald-tertiary: #047857;
+        --blue-secondary: #1d4ed8;
+        --red-error: #dc2626;
+        --red-dark: #991b1b;
+        --amber-warn: #b45309;
+        --text-white: #0f172a;
+        --text-muted: #334155;
+        --text-outline: #64748b;
+        --table-header-bg: #f8fafc;
+        --table-hover-bg: rgba(0, 119, 130, 0.07);
+        --input-bg: #ffffff;
+        --input-border: #cbd5e1;
+        --badge-bg: #e0f2fe;
+        --badge-text: #0369a1;
+        --badge-border: #7dd3fc;
+        --pulse-dot: #0284c7;
+        --btn-bg: #f1f5f9;
+        --btn-text: #007782;
+        --btn-border: #cbd5e1;
+        --btn-hover-bg: #007782;
+        --btn-hover-text: #ffffff;
+        --expander-summary-bg: #f8fafc;
+        --expander-details-bg: #ffffff;
+        --expander-details-text: #334155;
+        --stat-prod-bg: rgba(0, 119, 130, 0.10);
+        --stat-prod-col: #007782;
+        --stat-prod-border: rgba(0, 119, 130, 0.30);
+        --stat-cand-bg: rgba(4, 120, 87, 0.10);
+        --stat-cand-col: #047857;
+        --stat-cand-border: rgba(4, 120, 87, 0.30);
+        --stat-stby-bg: #f1f5f9;
+        --stat-stby-col: #475569;
+        --stat-stby-border: #cbd5e1;
+        --stat-base-bg: rgba(220, 38, 38, 0.10);
+        --stat-base-col: #dc2626;
+        --stat-base-border: rgba(220, 38, 38, 0.30);
+        --alert-box-bg: #fef2f2;
+        --alert-box-border: #fecaca;
+        --alert-box-text: #991b1b;
+        --warn-box-bg: #fffbeb;
+        --warn-box-border: #fde68a;
+        --warn-box-text: #b45309;
+        --nominal-box-bg: #f0fdf4;
+        --nominal-box-border: #bbf7d0;
+        --nominal-box-text: #047857;
+    }
+    """
+else:
+    PALETTE = {
+        "cyan": "#00e5ff",
+        "cyan_bright": "#6ff6fb",
+        "emerald": "#00e475",
+        "grey": "#94a3b8",
+        "red": "#ff1744",
+        "amber": "#ff9100",
+        "blue": "#b0c6ff",
+        "text": "#ffffff",
+        "text_muted": "#8dc8ce",
+        "bg_paper": "#0f2224",
+        "bg_plot": "#0b1618",
+        "border": "#20474b",
+        "radar_fill_cyan": "rgba(0, 229, 255, 0.22)",
+        "radar_fill_emerald": "rgba(0, 228, 117, 0.15)",
+        "radar_fill_grey": "rgba(148, 163, 184, 0.14)",
+        "radar_fill_red": "rgba(255, 23, 68, 0.10)",
+    }
+    css_theme_vars = """
+    :root {
+        --bg-main: #081113;
+        --bg-surface: #0b1618;
+        --bg-panel: #0f2224;
+        --bg-card: #12272a;
+        --bg-card-high: #142e31;
+        --border-teal: #20474b;
+        --border-bright: #2e656b;
+        --cyan-primary: #00e5ff;
+        --cyan-bright: #6ff6fb;
+        --emerald-tertiary: #00e475;
+        --blue-secondary: #b0c6ff;
+        --red-error: #ff1744;
+        --red-dark: #93000a;
+        --amber-warn: #ff9100;
+        --text-white: #f8fafc;
+        --text-muted: #8dc8ce;
+        --text-outline: #6a7889;
+        --table-header-bg: #142e31;
+        --table-hover-bg: rgba(0, 229, 255, 0.08);
+        --input-bg: #12272a;
+        --input-border: #20474b;
+        --badge-bg: #20474b;
+        --badge-text: #00e5ff;
+        --badge-border: #2e656b;
+        --pulse-dot: #00e5ff;
+        --btn-bg: #142e31;
+        --btn-text: #00e5ff;
+        --btn-border: #2e656b;
+        --btn-hover-bg: #00e5ff;
+        --btn-hover-text: #0b1618;
+        --expander-summary-bg: #12272a;
+        --expander-details-bg: #0b1618;
+        --expander-details-text: #dce3ee;
+        --stat-prod-bg: rgba(0, 229, 255, 0.15);
+        --stat-prod-col: #00e5ff;
+        --stat-prod-border: rgba(0, 229, 255, 0.35);
+        --stat-cand-bg: rgba(0, 228, 117, 0.15);
+        --stat-cand-col: #00e475;
+        --stat-cand-border: rgba(0, 228, 117, 0.35);
+        --stat-stby-bg: #142e31;
+        --stat-stby-col: #8dc8ce;
+        --stat-stby-border: #20474b;
+        --stat-base-bg: rgba(255, 23, 68, 0.15);
+        --stat-base-col: #ff8a80;
+        --stat-base-border: rgba(255, 23, 68, 0.30);
+        --alert-box-bg: rgba(147, 0, 10, 0.32);
+        --alert-box-border: rgba(255, 23, 68, 0.65);
+        --alert-box-text: #ffdad6;
+        --warn-box-bg: rgba(255, 145, 0, 0.15);
+        --warn-box-border: rgba(255, 145, 0, 0.55);
+        --warn-box-text: #ffe0b2;
+        --nominal-box-bg: rgba(0, 229, 255, 0.08);
+        --nominal-box-border: rgba(0, 229, 255, 0.40);
+        --nominal-box-text: #8dc8ce;
+    }
+    """
+
+# =========================================================================
+# Design System CSS Injection (AV-ANOMALY-WORKBENCH)
+# =========================================================================
+render_html(f"""
 <link href="https://fonts.googleapis.com" rel="preconnect">
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
 <style>
-:root {
-    --bg-main: #081113;
-    --bg-surface: #0b1618;
-    --bg-panel: #0f2224;
-    --bg-card: #12272a;
-    --bg-card-high: #142e31;
-    --border-teal: #20474b;
-    --border-bright: #2e656b;
-    --cyan-primary: #00e5ff;
-    --cyan-bright: #6ff6fb;
-    --emerald-tertiary: #00e475;
-    --blue-secondary: #b0c6ff;
-    --red-error: #ff1744;
-    --red-dark: #93000a;
-    --amber-warn: #ff9100;
-    --text-white: #f8fafc;
-    --text-muted: #8dc8ce;
-    --text-outline: #6a7889;
-}
-html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"] {
+{css_theme_vars}
+
+html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"] {{
     background-color: var(--bg-main) !important;
     color: var(--text-white) !important;
     font-family: 'Inter', sans-serif !important;
-}
-[data-testid="stHeader"] {
+}}
+[data-testid="stHeader"] {{
     background: transparent !important;
     height: 0px !important;
-}
-.block-container {
+}}
+.block-container {{
     padding-top: 0.4rem !important;
     padding-bottom: 1.5rem !important;
     padding-left: 1.5rem !important;
     padding-right: 1.5rem !important;
     max-width: 100% !important;
-}
-[data-testid="stSidebar"] {
+}}
+[data-testid="stSidebar"] {{
     background-color: var(--bg-surface) !important;
     border-right: 1px solid var(--border-teal) !important;
-}
-[data-testid="stSidebar"] * {
+}}
+[data-testid="stSidebar"] * {{
     color: var(--text-white);
-}
-[data-testid="stSidebar"] label, [data-testid="stSidebar"] .stMarkdown p {
+}}
+[data-testid="stSidebar"] label {{
+    color: var(--text-white) !important;
     font-family: 'JetBrains Mono', monospace !important;
     font-size: 0.76rem !important;
-}
-.material-symbols-outlined {
+    font-weight: 600 !important;
+}}
+[data-testid="stSidebar"] .stMarkdown p {{
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 0.76rem !important;
+    color: var(--text-muted) !important;
+}}
+.material-symbols-outlined {{
     font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
     display: inline-block;
     vertical-align: middle;
     line-height: 1;
-}
-::-webkit-scrollbar {
+}}
+::-webkit-scrollbar {{
     width: 6px;
     height: 6px;
-}
-::-webkit-scrollbar-track {
-    background: #081113;
-}
-::-webkit-scrollbar-thumb {
-    background: #20474b;
+}}
+::-webkit-scrollbar-track {{
+    background: var(--bg-main);
+}}
+::-webkit-scrollbar-thumb {{
+    background: var(--border-teal);
     border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-    background: #00e5ff;
-}
-.top-edge-gradient {
+}}
+::-webkit-scrollbar-thumb:hover {{
+    background: var(--cyan-primary);
+}}
+.top-edge-gradient {{
     height: 4px;
     width: 100%;
-    background: linear-gradient(90deg, #9cf1f3 0%, #00e5ff 50%, #cfe5ff 100%);
+    background: linear-gradient(90deg, #9cf1f3 0%, var(--cyan-primary) 50%, #cfe5ff 100%);
     margin-bottom: 0;
-}
-.av-topnav {
-    background-color: #0f2224;
-    border: 1px solid #20474b;
+}}
+.av-topnav {{
+    background-color: var(--bg-panel);
+    border: 1px solid var(--border-teal);
     border-radius: 4px;
     padding: 0.65rem 1.25rem;
     display: flex;
@@ -141,48 +294,48 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"] {
     gap: 0.75rem;
     margin-bottom: 0.85rem;
     font-family: 'Space Grotesk', sans-serif;
-}
-.av-topnav-title {
+}}
+.av-topnav-title {{
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    color: #ffffff;
+    color: var(--text-white);
     font-weight: 700;
     font-size: 1.02rem;
     letter-spacing: -0.015em;
-}
-.av-version-badge {
+}}
+.av-version-badge {{
     padding: 2px 8px;
     border-radius: 4px;
     font-size: 10px;
     font-family: 'JetBrains Mono', monospace;
     font-weight: 600;
-    background: #20474b;
-    color: #00e5ff;
-    border: 1px solid #2e656b;
-}
-.av-telemetry-pill {
+    background: var(--badge-bg);
+    color: var(--badge-text);
+    border: 1px solid var(--badge-border);
+}}
+.av-telemetry-pill {{
     display: inline-flex;
     align-items: center;
     gap: 0.6rem;
     font-size: 11px;
     font-family: 'JetBrains Mono', monospace;
-    color: #8dc8ce;
-    background: #142e31;
+    color: var(--text-muted);
+    background: var(--bg-card-high);
     padding: 0.35rem 0.75rem;
     border-radius: 4px;
-    border: 1px solid #20474b;
-}
-.pulse-dot {
+    border: 1px solid var(--border-teal);
+}}
+.pulse-dot {{
     width: 8px;
     height: 8px;
     border-radius: 9999px;
-    background-color: #00e5ff;
-    box-shadow: 0 0 8px #00e5ff;
+    background-color: var(--pulse-dot);
+    box-shadow: 0 0 8px var(--pulse-dot);
     display: inline-block;
-}
-.aeb-badge-crit {
-    background: #93000a;
+}}
+.aeb-badge-crit {{
+    background: var(--red-dark);
     color: #ffffff;
     font-family: 'JetBrains Mono', monospace;
     font-size: 11px;
@@ -191,81 +344,81 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"] {
     border-radius: 4px;
     border: 1px solid rgba(255, 180, 171, 0.4);
     box-shadow: 0 0 15px -2px rgba(255, 23, 68, 0.45);
-}
-.stTabs [data-baseweb="tab-list"] {
-    background-color: #0f2224 !important;
-    border: 1px solid #20474b !important;
+}}
+.stTabs [data-baseweb="tab-list"] {{
+    background-color: var(--bg-panel) !important;
+    border: 1px solid var(--border-teal) !important;
     border-radius: 4px !important;
     padding: 0.25rem 0.75rem 0 0.75rem !important;
     gap: 0.5rem !important;
-}
-.stTabs [data-baseweb="tab"] {
+}}
+.stTabs [data-baseweb="tab"] {{
     font-family: 'JetBrains Mono', monospace !important;
     font-size: 0.76rem !important;
-    color: #8dc8ce !important;
+    color: var(--text-muted) !important;
     padding: 0.65rem 1rem !important;
     border-bottom: 2px solid transparent !important;
     background: transparent !important;
-}
-.stTabs [aria-selected="true"] {
-    color: #00e5ff !important;
+}}
+.stTabs [aria-selected="true"] {{
+    color: var(--cyan-primary) !important;
     font-weight: 700 !important;
-    border-bottom: 2px solid #00e5ff !important;
-}
-.wb-kpi-card {
-    background-color: #0f2224;
-    border: 1px solid #20474b;
+    border-bottom: 2px solid var(--cyan-primary) !important;
+}}
+.wb-kpi-card {{
+    background-color: var(--bg-panel);
+    border: 1px solid var(--border-teal);
     border-radius: 4px;
     padding: 1rem 1.15rem;
     transition: border-color 0.2s;
-}
-.wb-kpi-card:hover {
-    border-color: #00e5ff;
-}
-.wb-kpi-header {
+}}
+.wb-kpi-card:hover {{
+    border-color: var(--cyan-primary);
+}}
+.wb-kpi-header {{
     display: flex;
     align-items: center;
     justify-content: space-between;
     font-family: 'JetBrains Mono', monospace;
     font-size: 11px;
     font-weight: 600;
-    color: #8dc8ce;
+    color: var(--text-muted);
     text-transform: uppercase;
-}
-.wb-kpi-value {
+}}
+.wb-kpi-value {{
     font-family: 'JetBrains Mono', monospace;
     font-size: 1.85rem;
     font-weight: 700;
-    color: #ffffff;
+    color: var(--text-white);
     margin-top: 0.35rem;
     letter-spacing: -0.02em;
-}
-.wb-kpi-delta {
+}}
+.wb-kpi-delta {{
     display: flex;
     align-items: center;
     gap: 0.3rem;
     font-family: 'JetBrains Mono', monospace;
     font-size: 11px;
     font-weight: 600;
-    color: #00e5ff;
+    color: var(--cyan-primary);
     margin-top: 0.25rem;
-}
-.wb-kpi-sub {
+}}
+.wb-kpi-sub {{
     font-family: 'JetBrains Mono', monospace;
     font-size: 10px;
-    color: #6a7889;
+    color: var(--text-outline);
     margin-top: 0.35rem;
-}
-.wb-panel {
-    background-color: #0f2224;
-    border: 1px solid #20474b;
+}}
+.wb-panel {{
+    background-color: var(--bg-panel);
+    border: 1px solid var(--border-teal);
     border-radius: 4px;
     padding: 1rem;
     margin-bottom: 1rem;
-}
-.wb-panel-header {
-    background-color: #12272a;
-    border: 1px solid #20474b;
+}}
+.wb-panel-header {{
+    background-color: var(--bg-card-high);
+    border: 1px solid var(--border-teal);
     border-bottom: none;
     border-radius: 4px 4px 0 0;
     padding: 0.55rem 0.85rem;
@@ -275,11 +428,11 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"] {
     font-family: 'JetBrains Mono', monospace;
     font-size: 11px;
     font-weight: 600;
-    color: #ffffff;
-}
-.wb-panel-footer {
-    background-color: #12272a;
-    border: 1px solid #20474b;
+    color: var(--text-white);
+}}
+.wb-panel-footer {{
+    background-color: var(--bg-card-high);
+    border: 1px solid var(--border-teal);
     border-top: none;
     border-radius: 0 0 4px 4px;
     padding: 0.45rem 0.85rem;
@@ -288,196 +441,225 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"] {
     justify-content: space-between;
     font-family: 'JetBrains Mono', monospace;
     font-size: 10.5px;
-    color: #8dc8ce;
+    color: var(--text-muted);
     margin-bottom: 0.75rem;
-}
-.wb-table-wrap {
-    background-color: #0f2224;
-    border: 1px solid #20474b;
+}}
+.wb-table-wrap {{
+    background-color: var(--bg-panel);
+    border: 1px solid var(--border-teal);
     border-radius: 4px;
     overflow-x: auto;
-}
-.wb-table {
+}}
+.wb-table {{
     width: 100%;
     border-collapse: collapse;
     font-family: 'JetBrains Mono', monospace;
     font-size: 11.5px;
     text-align: left;
-}
-.wb-table thead {
-    background-color: #142e31;
-    color: #8dc8ce;
+}}
+.wb-table thead {{
+    background-color: var(--table-header-bg);
+    color: var(--text-muted);
     font-size: 10.5px;
-    border-bottom: 1px solid #20474b;
+    border-bottom: 1px solid var(--border-teal);
     text-transform: uppercase;
-}
-.wb-table th, .wb-table td {
+}}
+.wb-table th, .wb-table td {{
     padding: 0.7rem 0.9rem;
-    border-bottom: 1px solid rgba(32, 71, 75, 0.45);
-}
-.wb-table tbody tr:hover {
-    background-color: rgba(0, 229, 255, 0.06);
-}
-.status-prod {
+    border-bottom: 1px solid var(--border-teal);
+    color: var(--text-white);
+}}
+.wb-table tbody tr:hover {{
+    background-color: var(--table-hover-bg);
+}}
+.status-prod {{
     padding: 2px 7px;
     border-radius: 3px;
     font-size: 10px;
-    background: rgba(0, 229, 255, 0.15);
-    color: #00e5ff;
-    border: 1px solid rgba(0, 229, 255, 0.35);
-}
-.status-cand {
+    font-weight: 700;
+    background: var(--stat-prod-bg);
+    color: var(--stat-prod-col);
+    border: 1px solid var(--stat-prod-border);
+}}
+.status-cand {{
     padding: 2px 7px;
     border-radius: 3px;
     font-size: 10px;
-    background: rgba(0, 228, 117, 0.15);
-    color: #00e475;
-    border: 1px solid rgba(0, 228, 117, 0.35);
-}
-.status-stby {
+    font-weight: 700;
+    background: var(--stat-cand-bg);
+    color: var(--stat-cand-col);
+    border: 1px solid var(--stat-cand-border);
+}}
+.status-stby {{
     padding: 2px 7px;
     border-radius: 3px;
     font-size: 10px;
-    background: #142e31;
-    color: #8dc8ce;
-    border: 1px solid #20474b;
-}
-.status-base {
+    background: var(--stat-stby-bg);
+    color: var(--stat-stby-col);
+    border: 1px solid var(--stat-stby-border);
+}}
+.status-base {{
     padding: 2px 7px;
     border-radius: 3px;
     font-size: 10px;
-    background: rgba(255, 23, 68, 0.15);
-    color: #ff8a80;
-    border: 1px solid rgba(255, 23, 68, 0.3);
-}
-.aeb-alert-box {
+    font-weight: 700;
+    background: var(--stat-base-bg);
+    color: var(--stat-base-col);
+    border: 1px solid var(--stat-base-border);
+}}
+.aeb-alert-box {{
     padding: 0.95rem 1.25rem;
     border-radius: 4px;
-    background: rgba(147, 0, 10, 0.32);
-    border: 1px solid rgba(255, 23, 68, 0.65);
-    box-shadow: 0 0 18px -2px rgba(255, 23, 68, 0.35);
+    background: var(--alert-box-bg);
+    border: 1px solid var(--alert-box-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 1rem;
     margin-bottom: 1rem;
-}
-.aeb-warn-box {
+}}
+.aeb-warn-box {{
     padding: 0.95rem 1.25rem;
     border-radius: 4px;
-    background: rgba(255, 145, 0, 0.15);
-    border: 1px solid rgba(255, 145, 0, 0.55);
+    background: var(--warn-box-bg);
+    border: 1px solid var(--warn-box-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 1rem;
     margin-bottom: 1rem;
-}
-.aeb-nominal-box {
+}}
+.aeb-nominal-box {{
     padding: 0.95rem 1.25rem;
     border-radius: 4px;
-    background: rgba(0, 229, 255, 0.08);
-    border: 1px solid rgba(0, 229, 255, 0.4);
+    background: var(--nominal-box-bg);
+    border: 1px solid var(--nominal-box-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 1rem;
     margin-bottom: 1rem;
-}
-.stButton > button {
-    background-color: #142e31 !important;
-    color: #00e5ff !important;
-    border: 1px solid #2e656b !important;
+}}
+.stButton > button {{
+    background-color: var(--btn-bg) !important;
+    color: var(--btn-text) !important;
+    border: 1px solid var(--btn-border) !important;
     font-family: 'JetBrains Mono', monospace !important;
     font-size: 0.74rem !important;
     font-weight: 600 !important;
     border-radius: 4px !important;
     transition: all 0.15s ease !important;
-}
-.stButton > button:hover {
-    background-color: #00e5ff !important;
-    color: #0b1618 !important;
-    border-color: #00e5ff !important;
-}
-div[data-testid="stDownloadButton"] > button {
-    background-color: #00e5ff !important;
-    color: #0b1618 !important;
-    border: 1px solid #00e5ff !important;
+}}
+.stButton > button:hover {{
+    background-color: var(--btn-hover-bg) !important;
+    color: var(--btn-hover-text) !important;
+    border-color: var(--cyan-primary) !important;
+}}
+div[data-testid="stDownloadButton"] > button {{
+    background-color: var(--cyan-primary) !important;
+    color: #ffffff !important;
+    border: 1px solid var(--cyan-primary) !important;
     font-family: 'JetBrains Mono', monospace !important;
     font-size: 0.74rem !important;
     font-weight: 700 !important;
     border-radius: 4px !important;
-}
-div[data-baseweb="select"] > div {
-    background-color: #12272a !important;
-    border-color: #20474b !important;
-    color: #ffffff !important;
+}}
+div[data-baseweb="select"] > div {{
+    background-color: var(--input-bg) !important;
+    border-color: var(--input-border) !important;
+    color: var(--text-white) !important;
     font-family: 'JetBrains Mono', monospace !important;
     font-size: 0.76rem !important;
-}
-.cat-bar-bg {
+}}
+div[data-baseweb="select"] span {{
+    color: var(--text-white) !important;
+}}
+div[data-baseweb="popover"], ul[data-baseweb="menu"] {{
+    background-color: var(--bg-panel) !important;
+    color: var(--text-white) !important;
+    border: 1px solid var(--border-teal) !important;
+}}
+ul[data-baseweb="menu"] li {{
+    color: var(--text-white) !important;
+}}
+ul[data-baseweb="menu"] li:hover {{
+    background-color: var(--table-hover-bg) !important;
+}}
+div[data-testid="stRadio"] label, div[data-testid="stRadio"] span, div[data-testid="stCheckbox"] label span {{
+    color: var(--text-white) !important;
+    font-family: 'JetBrains Mono', monospace !important;
+}}
+div[data-testid="stSlider"] label, div[data-testid="stSlider"] div[data-testid="stThumbValue"] {{
+    color: var(--text-white) !important;
+    font-family: 'JetBrains Mono', monospace !important;
+}}
+[data-testid="stDataFrame"] {{
+    background-color: var(--bg-panel) !important;
+    border: 1px solid var(--border-teal) !important;
+    border-radius: 4px !important;
+}}
+.cat-bar-bg {{
     width: 100%;
     height: 10px;
-    background-color: #142e31;
+    background-color: var(--bg-card-high);
     border-radius: 3px;
     overflow: hidden;
     margin-top: 4px;
     margin-bottom: 10px;
-}
-/* Streamlit Expander Dark Cyber Telemetry Styling */
-div[data-testid="stExpander"] {
-    background-color: #0f2224 !important;
-    border: 1px solid #20474b !important;
+}}
+div[data-testid="stExpander"] {{
+    background-color: var(--bg-panel) !important;
+    border: 1px solid var(--border-teal) !important;
     border-radius: 4px !important;
     margin-top: 0.45rem !important;
     margin-bottom: 0.85rem !important;
-}
-div[data-testid="stExpander"] details summary {
+}}
+div[data-testid="stExpander"] details summary {{
     font-family: 'JetBrains Mono', monospace !important;
     font-size: 0.78rem !important;
     font-weight: 600 !important;
-    color: #00e5ff !important;
-    background-color: #12272a !important;
+    color: var(--cyan-primary) !important;
+    background-color: var(--expander-summary-bg) !important;
     border-radius: 4px !important;
     padding: 0.6rem 0.95rem !important;
     cursor: pointer !important;
     transition: background-color 0.2s, color 0.2s, border-color 0.2s !important;
-}
-div[data-testid="stExpander"] details summary:hover {
-    color: #ffffff !important;
-    background-color: #1a3c40 !important;
-}
-div[data-testid="stExpander"] details[open] summary {
-    border-bottom: 1px solid #20474b !important;
+}}
+div[data-testid="stExpander"] details summary:hover {{
+    color: var(--text-white) !important;
+    background-color: var(--table-hover-bg) !important;
+}}
+div[data-testid="stExpander"] details[open] summary {{
+    border-bottom: 1px solid var(--border-teal) !important;
     border-bottom-left-radius: 0 !important;
     border-bottom-right-radius: 0 !important;
-}
-div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] {
-    background-color: #0b1618 !important;
-    border-top: 1px solid #20474b !important;
+}}
+div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] {{
+    background-color: var(--expander-details-bg) !important;
+    border-top: 1px solid var(--border-teal) !important;
     padding: 0.95rem 1.15rem !important;
     font-size: 0.83rem !important;
-    color: #dce3ee !important;
+    color: var(--expander-details-text) !important;
     line-height: 1.55 !important;
-}
-.wb-footer {
+}}
+.wb-footer {{
     margin-top: 2rem;
-    border-top: 1px solid #20474b;
-    background-color: #0b1618;
+    border-top: 1px solid var(--border-teal);
+    background-color: var(--bg-surface);
     padding: 0.85rem 1.25rem;
     font-family: 'JetBrains Mono', monospace;
     font-size: 11px;
-    color: #6a7889;
+    color: var(--text-outline);
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 0.75rem;
     border-radius: 4px;
-}
+}}
 </style>
 """)
 
@@ -1070,19 +1252,40 @@ def compute_obstacle_anomaly_factors(rgb_np, bin_mask):
     }
 
 
-def apply_dark_plotly_theme(fig, height=340, title_text=None):
+def apply_plotly_theme(fig, is_light=False, height=340, title_text=None):
+    if is_light:
+        paper_bg = "#ffffff"
+        plot_bg = "#f8fafc"
+        font_col = "#334155"
+        grid_col = "rgba(203, 213, 225, 0.7)"
+        zero_col = "#cbd5e1"
+        leg_bg = "rgba(255, 255, 255, 0.95)"
+        title_col = "#0f172a"
+    else:
+        paper_bg = "#0f2224"
+        plot_bg = "#0b1618"
+        font_col = "#8dc8ce"
+        grid_col = "rgba(59, 73, 76, 0.35)"
+        zero_col = "#20474b"
+        leg_bg = "rgba(15, 34, 36, 0.85)"
+        title_col = "#ffffff"
+
     fig.update_layout(
-        title=dict(text=title_text, font=dict(family="Space Grotesk, sans-serif", size=13, color="#ffffff")) if title_text else None,
-        paper_bgcolor="#0f2224",
-        plot_bgcolor="#0b1618",
-        font=dict(family="JetBrains Mono, monospace", size=10.5, color="#8dc8ce"),
+        title=dict(text=title_text, font=dict(family="Space Grotesk, sans-serif", size=13, color=title_col)) if title_text else None,
+        paper_bgcolor=paper_bg,
+        plot_bgcolor=plot_bg,
+        font=dict(family="JetBrains Mono, monospace", size=10.5, color=font_col),
         height=height,
         margin=dict(l=36, r=24, t=42 if title_text else 20, b=36),
-        xaxis=dict(gridcolor="rgba(59, 73, 76, 0.35)", zerolinecolor="#20474b", linecolor="#20474b"),
-        yaxis=dict(gridcolor="rgba(59, 73, 76, 0.35)", zerolinecolor="#20474b", linecolor="#20474b"),
-        legend=dict(bgcolor="rgba(15, 34, 36, 0.85)", bordercolor="#20474b", borderwidth=1, font=dict(size=10))
+        xaxis=dict(gridcolor=grid_col, zerolinecolor=zero_col, linecolor=zero_col),
+        yaxis=dict(gridcolor=grid_col, zerolinecolor=zero_col, linecolor=zero_col),
+        legend=dict(bgcolor=leg_bg, bordercolor=zero_col, borderwidth=1, font=dict(size=10, color=font_col))
     )
     return fig
+
+
+def apply_dark_plotly_theme(fig, height=340, title_text=None):
+    return apply_plotly_theme(fig, is_light=is_light, height=height, title_text=title_text)
 
 
 # =========================================================================
@@ -1102,27 +1305,40 @@ if "custom_tau" not in st.session_state:
 # LEFT SIDEBAR: STREAMLIT_SIDEBAR // PARAMETERS
 # =========================================================================
 with st.sidebar:
-    gpu_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU Execution Engine"
+    render_html("<div style='font-family: Space Grotesk, sans-serif; font-size: 11px; font-weight: 700; color: var(--cyan-primary); text-transform: uppercase; margin-bottom: 4px;'>Interface Theme</div>")
+    theme_choice = st.radio(
+        "Interface Theme",
+        ["Dark Cyber Telemetry", "Neat Clean Light"],
+        index=1 if is_light else 0,
+        horizontal=True,
+        label_visibility="collapsed",
+        key="theme_radio_selector"
+    )
+    if (theme_choice == "Neat Clean Light") != is_light:
+        st.session_state["theme_mode"] = theme_choice
+        st.rerun()
+
+    gpu_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU Core"
     vram_str = f"{torch.cuda.get_device_properties(0).total_memory / (1024**3):.1f} GB" if torch.cuda.is_available() else "System RAM"
 
     render_html(f"""
-    <div style="border-bottom: 1px solid #20474b; padding-bottom: 0.75rem; margin-bottom: 0.75rem;">
+    <div style="border-bottom: 1px solid var(--border-teal); padding-bottom: 0.75rem; margin-bottom: 0.75rem;">
         <div style="display: flex; align-items: center; justify-content: space-between;">
-            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #8dc8ce;">PARAMETERS</span>
-            <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #00e5ff; background: rgba(0, 229, 255, 0.15); padding: 2px 6px; border-radius: 3px;">ONLINE</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: var(--text-muted);">PARAMETERS</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--cyan-primary); background: var(--stat-prod-bg); padding: 2px 6px; border-radius: 3px;">ONLINE</span>
         </div>
         <div style="margin-top: 0.5rem; font-family: 'JetBrains Mono', monospace; font-size: 11px; display: flex; justify-content: space-between;">
-            <span style="color: #6a7889;">Hardware Target:</span>
-            <span style="color: #00e5ff; font-weight: 600;">PyTorch {torch.__version__.split('+')[0]}</span>
+            <span style="color: var(--text-outline);">Hardware Target:</span>
+            <span style="color: var(--cyan-primary); font-weight: 600;">PyTorch {torch.__version__.split('+')[0]}</span>
         </div>
         <div style="margin-top: 0.2rem; font-family: 'JetBrains Mono', monospace; font-size: 11px; display: flex; justify-content: space-between;">
-            <span style="color: #6a7889;">Compute Memory:</span>
-            <span style="color: #6ff6fb; font-weight: 600;">133.4 MB / {vram_str}</span>
+            <span style="color: var(--text-outline);">Compute Memory:</span>
+            <span style="color: var(--cyan-bright); font-weight: 600;">133.4 MB / {vram_str}</span>
         </div>
     </div>
     """)
 
-    render_html("<div style='font-family: Space Grotesk, sans-serif; font-size: 11px; font-weight: 700; color: #6ff6fb; text-transform: uppercase; margin-bottom: 4px;'>1. Model Paradigm (st.selectbox)</div>")
+    render_html("<div style='font-family: Space Grotesk, sans-serif; font-size: 11px; font-weight: 700; color: var(--cyan-primary); text-transform: uppercase; margin-bottom: 4px;'>1. Model Paradigm (st.selectbox)</div>")
     paradigm_map = {
         "Transfer ResNet-34 U-Net (ComboLoss)": "resnet34_tta",
         "Hybrid Ensemble (ResNet34 TTA + CAE)": "hybrid",
@@ -1138,7 +1354,7 @@ with st.sidebar:
     )
     selected_model_key = paradigm_map[selected_paradigm_label]
 
-    render_html("<div style='font-family: Space Grotesk, sans-serif; font-size: 11px; font-weight: 700; color: #6ff6fb; text-transform: uppercase; margin-top: 10px; margin-bottom: 4px;'>2. Dataset Partition (st.radio)</div>")
+    render_html("<div style='font-family: Space Grotesk, sans-serif; font-size: 11px; font-weight: 700; color: var(--cyan-primary); text-transform: uppercase; margin-top: 10px; margin-bottom: 4px;'>2. Dataset Partition (st.radio)</div>")
     split_choice = st.radio(
         "Dataset Partition",
         ["TEST", "VAL", "TRAIN", "ALL"],
@@ -1147,7 +1363,7 @@ with st.sidebar:
         label_visibility="collapsed"
     )
 
-    render_html("<div style='font-family: Space Grotesk, sans-serif; font-size: 11px; font-weight: 700; color: #6ff6fb; text-transform: uppercase; margin-top: 10px; margin-bottom: 4px;'>3. Active Hazard Taxonomy</div>")
+    render_html("<div style='font-family: Space Grotesk, sans-serif; font-size: 11px; font-weight: 700; color: var(--cyan-primary); text-transform: uppercase; margin-top: 10px; margin-bottom: 4px;'>3. Active Hazard Taxonomy</div>")
     cat_Animals = st.checkbox("Wild Animals (Boar / Deer / Sheep) [31]", value=True)
     cat_Obstacles = st.checkbox("Obstacles & Rocks (Boulders) [15]", value=True)
     cat_Cones = st.checkbox("Traffic Barrels / Cones [8]", value=True)
@@ -1175,13 +1391,13 @@ with st.sidebar:
         filtered_df = df_meta.copy()
 
     render_html(f"""
-    <div style="display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #6a7889; margin-bottom: 8px;">
+    <div style="display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-outline); margin-bottom: 8px;">
         <span>Loaded: {len(filtered_df)} / 60 frames</span>
-        <span style="color: #00e5ff;">OOD: 100%</span>
+        <span style="color: var(--cyan-primary);">OOD: 100%</span>
     </div>
     """)
 
-    render_html("<div style='font-family: Space Grotesk, sans-serif; font-size: 11px; font-weight: 700; color: #6ff6fb; text-transform: uppercase; margin-top: 8px; margin-bottom: 4px;'>4. Decision Threshold & Filters</div>")
+    render_html("<div style='font-family: Space Grotesk, sans-serif; font-size: 11px; font-weight: 700; color: var(--cyan-primary); text-transform: uppercase; margin-top: 8px; margin-bottom: 4px;'>4. Decision Threshold & Filters</div>")
 
     opt_key_lookup = selected_model_key if selected_model_key in suite["optimal_thresholds"] else "resnet34_tta"
     calibrated_tau_val = float(suite["optimal_thresholds"][opt_key_lookup][0])
@@ -1202,7 +1418,7 @@ with st.sidebar:
     enable_morph = st.checkbox("3x3 Morphological Filter (Opening + Closing)", value=True)
     overlay_alpha = st.slider("Overlay Blend Opacity", 0.15, 0.85, 0.48, 0.02)
 
-    render_html("<div style='font-family: JetBrains Mono, monospace; font-size: 10.5px; color: #6a7889; text-transform: uppercase; margin-top: 8px; margin-bottom: 4px;'>Primary Validation Objective:</div>")
+    render_html("<div style='font-family: JetBrains Mono, monospace; font-size: 10.5px; color: var(--text-outline); text-transform: uppercase; margin-top: 8px; margin-bottom: 4px;'>Primary Validation Objective:</div>")
     primary_obj = st.radio(
         "Primary Validation Objective",
         ["Pixel mIoU", "Boundary Dice", "AUROC", "FPR@95%TPR"],
@@ -1212,8 +1428,8 @@ with st.sidebar:
     )
 
     render_html("""
-    <div style="margin-top: 1.2rem; padding-top: 0.75rem; border-top: 1px solid #20474b; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #6a7889; display: flex; justify-content: space-between; align-items: center;">
-        <span><span class="material-symbols-outlined" style="font-size: 12px; color: #00e475;">check_circle</span> ROS2 Bag Bridge: ACTIVE</span>
+    <div style="margin-top: 1.2rem; padding-top: 0.75rem; border-top: 1px solid var(--border-teal); font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-outline); display: flex; justify-content: space-between; align-items: center;">
+        <span><span class="material-symbols-outlined" style="font-size: 12px; color: var(--emerald-tertiary);">check_circle</span> ROS2 Bag Bridge: ACTIVE</span>
         <span>Build 2026.11.08</span>
     </div>
     """)
@@ -1227,7 +1443,7 @@ render_html(f"""
 <div class="top-edge-gradient"></div>
 <div class="av-topnav">
     <div class="av-topnav-title">
-        <span class="material-symbols-outlined" style="color: #00e5ff; font-size: 22px;">radar</span>
+        <span class="material-symbols-outlined" style="color: var(--cyan-primary); font-size: 22px;">radar</span>
         <span>AV-ANOMALY-WORKBENCH // Road Obstacle Segmentation &amp; Diagnostics</span>
         <span class="av-version-badge">v2.4-rc3</span>
     </div>
@@ -1235,8 +1451,8 @@ render_html(f"""
         <div class="av-telemetry-pill">
             <span class="pulse-dot"></span>
             <span>{hw_tag}</span>
-            <span style="color: #2e656b;">|</span>
-            <span style="color: #ffffff; font-weight: 700;">8.4ms (119.0 FPS)</span>
+            <span style="color: var(--border-bright);">|</span>
+            <span style="color: var(--text-white); font-weight: 700;">8.4ms (119.0 FPS)</span>
         </div>
         <div class="aeb-badge-crit">
             AEB TRIGGERED: CRITICAL HAZARD MONITOR
@@ -1265,13 +1481,13 @@ with tab1:
     render_html("""
     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 0.85rem;">
         <div>
-            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #00e5ff; text-transform: uppercase; letter-spacing: 0.06em;">Benchmark Suite // RoadAnomaly OOD Challenge (Lis et al., ICCV 2019)</div>
-            <h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.55rem; font-weight: 700; color: #ffffff; margin: 0.15rem 0;">Executive Anomaly Detection Benchmark</h1>
-            <p style="font-size: 0.84rem; color: #8dc8ce; margin: 0;">Multi-paradigm comparative validation evaluated across 60 HD road frames (55,296,000 pixels audited; 10 unseen test frames). Click any dashboard below to reveal its granular engineering interpretation.</p>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--cyan-primary); text-transform: uppercase; letter-spacing: 0.06em;">Benchmark Suite // RoadAnomaly OOD Challenge (Lis et al., ICCV 2019)</div>
+            <h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.55rem; font-weight: 700; color: var(--text-white); margin: 0.15rem 0;">Executive Anomaly Detection Benchmark</h1>
+            <p style="font-size: 0.84rem; color: var(--text-muted); margin: 0;">Multi-paradigm comparative validation evaluated across 60 HD road frames (55,296,000 pixels audited; 10 unseen test frames). Click any dashboard below to reveal its granular engineering interpretation.</p>
         </div>
         <div style="display: flex; align-items: center; gap: 0.6rem;">
-            <span style="padding: 0.4rem 0.75rem; border-radius: 4px; background: #142e31; border: 1px solid #20474b; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #ffffff;">
-                Target: <strong style="color: #00e5ff;">ASIL-D Hazard Conformance</strong>
+            <span style="padding: 0.4rem 0.75rem; border-radius: 4px; background: var(--bg-card-high); border: 1px solid var(--border-teal); font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-white);">
+                Target: <strong style="color: var(--cyan-primary);">ASIL-D Hazard Conformance</strong>
             </span>
         </div>
     </div>
@@ -1288,10 +1504,10 @@ with tab1:
     # ---------------------------------------------------------------------
     render_html("""
     <div class="wb-panel-header">
-        <span><span class="material-symbols-outlined" style="font-size: 15px; color: #00e5ff; margin-right: 6px;">speed</span>Dashboard 1 // Executive Telemetry KPI Deck (Core Automotive Safety Indicators)</span>
-        <span style="color: #8dc8ce; font-size: 10px;">Primary Validation Milestones</span>
+        <span><span class="material-symbols-outlined" style="font-size: 15px; color: var(--cyan-primary); margin-right: 6px;">speed</span>Dashboard 1 // Executive Telemetry KPI Deck (Core Automotive Safety Indicators)</span>
+        <span style="color: var(--text-muted); font-size: 10px;">Primary Validation Milestones</span>
     </div>
-    <div style="background: #12272a; border-left: 1px solid #20474b; border-right: 1px solid #20474b; padding: 0.45rem 0.85rem; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #8dc8ce;">
+    <div style="background: var(--bg-card-high); border-left: 1px solid var(--border-teal); border-right: 1px solid var(--border-teal); padding: 0.45rem 0.85rem; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--text-muted);">
         <strong>Description:</strong> Real-time summary cards tracking the peak scores achieved across 4 non-negotiable perception dimensions: Global Discriminability (AUROC), Extreme Imbalance Precision (AUPRC), Boundary Contour Conformance (Dice F1), and Ground Intersection-over-Union (mIoU).
     </div>
     """)
@@ -1302,7 +1518,7 @@ with tab1:
         <div class="wb-kpi-card">
             <div class="wb-kpi-header">
                 <span>BEST ANOMALY AUROC</span>
-                <span class="material-symbols-outlined" style="font-size: 18px; color: #00e5ff;">analytics</span>
+                <span class="material-symbols-outlined" style="font-size: 18px; color: var(--cyan-primary);">analytics</span>
             </div>
             <div class="wb-kpi-value">{best_auroc:.2f}%</div>
             <div class="wb-kpi-delta">
@@ -1318,7 +1534,7 @@ with tab1:
         <div class="wb-kpi-card">
             <div class="wb-kpi-header">
                 <span>MEAN AVERAGE PRECISION (AUPRC)</span>
-                <span class="material-symbols-outlined" style="font-size: 18px; color: #00e475;">target</span>
+                <span class="material-symbols-outlined" style="font-size: 18px; color: var(--emerald-tertiary);">target</span>
             </div>
             <div class="wb-kpi-value">{best_auprc:.2f}%</div>
             <div class="wb-kpi-delta">
@@ -1334,7 +1550,7 @@ with tab1:
         <div class="wb-kpi-card">
             <div class="wb-kpi-header">
                 <span>BEST BOUNDARY DICE (F1)</span>
-                <span class="material-symbols-outlined" style="font-size: 18px; color: #b0c6ff;">verified</span>
+                <span class="material-symbols-outlined" style="font-size: 18px; color: var(--blue-secondary);">verified</span>
             </div>
             <div class="wb-kpi-value">{best_dice:.2f}%</div>
             <div class="wb-kpi-delta">
@@ -1350,7 +1566,7 @@ with tab1:
         <div class="wb-kpi-card">
             <div class="wb-kpi-header">
                 <span>TEST PIXEL mIoU / ACCURACY</span>
-                <span class="material-symbols-outlined" style="font-size: 18px; color: #ff1744;">warning</span>
+                <span class="material-symbols-outlined" style="font-size: 18px; color: var(--red-error);">warning</span>
             </div>
             <div class="wb-kpi-value">{best_iou:.2f}%</div>
             <div class="wb-kpi-delta">
@@ -1364,30 +1580,30 @@ with tab1:
     with st.expander("Click to view Interpretation: KPI Definitions, ASIL-D Safety Standards & Metric Analysis", expanded=False):
         render_html("""
         <div style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; line-height: 1.6;">
-            <div style="margin-bottom: 0.85rem; padding-bottom: 0.65rem; border-bottom: 1px solid #20474b;">
-                <span style="color: #00e5ff; font-weight: 700; text-transform: uppercase;">1. AUROC (89.66% // Winner: Hybrid Ensemble)</span>
-                <p style="margin: 4px 0 0 0; color: #dce3ee;">
+            <div style="margin-bottom: 0.85rem; padding-bottom: 0.65rem; border-bottom: 1px solid var(--border-teal);">
+                <span style="color: var(--cyan-primary); font-weight: 700; text-transform: uppercase;">1. AUROC (89.66% // Winner: Hybrid Ensemble)</span>
+                <p style="margin: 4px 0 0 0; color: var(--text-white);">
                     <strong>Measurement &amp; Definition:</strong> Area Under the Receiver Operating Characteristic curve. Evaluates the probability that a randomly chosen obstacle pixel receives a higher anomaly score than a randomly chosen road pixel across all possible decision thresholds from 0 to 1.<br>
                     <strong>Automotive Interpretation:</strong> In safety-critical automated driving, high AUROC guarantees threshold-independent separability. The Hybrid Ensemble achieves 89.66%, proving that fusing supervised transfer semantics with unsupervised autoencoder reconstruction creates a robust discriminator that isolates unknown hazards (wild animals, boulders, debris) before operational thresholding.
                 </p>
             </div>
-            <div style="margin-bottom: 0.85rem; padding-bottom: 0.65rem; border-bottom: 1px solid #20474b;">
-                <span style="color: #00e475; font-weight: 700; text-transform: uppercase;">2. Mean Average Precision / AUPRC (70.53% // +49.28% over Scratch)</span>
-                <p style="margin: 4px 0 0 0; color: #dce3ee;">
+            <div style="margin-bottom: 0.85rem; padding-bottom: 0.65rem; border-bottom: 1px solid var(--border-teal);">
+                <span style="color: var(--emerald-tertiary); font-weight: 700; text-transform: uppercase;">2. Mean Average Precision / AUPRC (70.53% // +49.28% over Scratch)</span>
+                <p style="margin: 4px 0 0 0; color: var(--text-white);">
                     <strong>Measurement &amp; Definition:</strong> Area Under the Precision-Recall Curve. Standard AUROC can be deceptively optimistic in severely imbalanced environments (where 90.15% of pixels are benign road and only 9.85% are obstacles). AUPRC directly penalizes false positive road alarms.<br>
                     <strong>Automotive Interpretation:</strong> Achieving 70.53% AUPRC proves the model maintains high positive predictive value without false alarm cascades. In highway automated driving, preventing false positives is critical to avoiding hazardous phantom braking maneuvers that risk severe rear-end collisions.
                 </p>
             </div>
-            <div style="margin-bottom: 0.85rem; padding-bottom: 0.65rem; border-bottom: 1px solid #20474b;">
-                <span style="color: #b0c6ff; font-weight: 700; text-transform: uppercase;">3. Boundary Dice / F1 Score (59.29% // +213% Relative Gain)</span>
-                <p style="margin: 4px 0 0 0; color: #dce3ee;">
+            <div style="margin-bottom: 0.85rem; padding-bottom: 0.65rem; border-bottom: 1px solid var(--border-teal);">
+                <span style="color: var(--blue-secondary); font-weight: 700; text-transform: uppercase;">3. Boundary Dice / F1 Score (59.29% // +213% Relative Gain)</span>
+                <p style="margin: 4px 0 0 0; color: var(--text-white);">
                     <strong>Measurement &amp; Definition:</strong> Harmonic mean of precision and recall (2 * |P ∩ G| / (|P| + |G|)). Quantifies the spatial overlap and geometric tightness of the predicted obstacle polygon against the ground truth human annotation.<br>
                     <strong>Automotive Interpretation:</strong> The baseline scratch model failed at 18.9% Dice, whereas Transfer ResNet-34 + TTA reaches 59.29%. High boundary Dice is mandatory for lateral vehicle path planners: collision avoidance trajectories require a clearance buffer of at least 15-20 cm around the hazard polygon to execute safe swerve maneuvers.
                 </p>
             </div>
             <div>
-                <span style="color: #ff1744; font-weight: 700; text-transform: uppercase;">4. Normalized IoU &amp; Global Accuracy (70.56% nIoU // 95.69% Global Acc)</span>
-                <p style="margin: 4px 0 0 0; color: #dce3ee;">
+                <span style="color: var(--red-error); font-weight: 700; text-transform: uppercase;">4. Normalized IoU &amp; Global Accuracy (70.56% nIoU // 95.69% Global Acc)</span>
+                <p style="margin: 4px 0 0 0; color: var(--text-white);">
                     <strong>Measurement &amp; Definition:</strong> Normalized Intersection-over-Union (Jaccard Index) computed over foreground obstacle instances alongside overall pixel classification correctness.<br>
                     <strong>Automotive Interpretation:</strong> 95.69% accuracy confirms that benign drivable roadway is not corrupted by spurious detections, while 70.56% nIoU ensures that Automatic Emergency Braking (AEB) logic receives consistent, contiguous hazard masks that satisfy ISO 26262 ASIL-D functional safety verification standards.
                 </p>
@@ -1405,10 +1621,10 @@ with tab1:
     with ch_left:
         render_html("""
         <div class="wb-panel-header">
-            <span><span class="material-symbols-outlined" style="font-size: 15px; color: #00e5ff; margin-right: 6px;">bar_chart</span>Dashboard 2 // Comparative Paradigm Performance</span>
-            <span style="color: #8dc8ce; font-size: 10px;">Grouped Plotly Benchmark</span>
+            <span><span class="material-symbols-outlined" style="font-size: 15px; color: var(--cyan-primary); margin-right: 6px;">bar_chart</span>Dashboard 2 // Comparative Paradigm Performance</span>
+            <span style="color: var(--text-muted); font-size: 10px;">Grouped Plotly Benchmark</span>
         </div>
-        <div style="background: #12272a; border-left: 1px solid #20474b; border-right: 1px solid #20474b; padding: 0.45rem 0.85rem; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #8dc8ce;">
+        <div style="background: var(--bg-card-high); border-left: 1px solid var(--border-teal); border-right: 1px solid var(--border-teal); padding: 0.45rem 0.85rem; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--text-muted);">
             <strong>Description:</strong> Grouped bar visualization benchmarking all 6 candidate model pipelines across three primary performance vectors: AUROC (cyan), Boundary Dice F1 (emerald), and Precision (slate grey).
         </div>
         """)
@@ -1418,19 +1634,19 @@ with tab1:
             x=bar_df["ShortName"],
             y=bar_df["AUROC"] * 100,
             name="AUROC (%)",
-            marker_color="#00e5ff"
+            marker_color=PALETTE["cyan"]
         ))
         fig_bar.add_trace(go.Bar(
             x=bar_df["ShortName"],
             y=bar_df["Test Dice (F1)"] * 100,
             name="Dice / F1 (%)",
-            marker_color="#00e475"
+            marker_color=PALETTE["emerald"]
         ))
         fig_bar.add_trace(go.Bar(
             x=bar_df["ShortName"],
             y=bar_df["Precision"] * 100,
             name="Precision (%)",
-            marker_color="#94a3b8"
+            marker_color=PALETTE["grey"]
         ))
         fig_bar.update_layout(barmode="group", yaxis=dict(range=[0, 105], title="Score (%)"))
         apply_dark_plotly_theme(fig_bar, height=310)
@@ -1439,17 +1655,17 @@ with tab1:
         with st.expander("Click to view Dashboard 2 Interpretation: Transfer Learning & Loss Function Dynamics", expanded=False):
             render_html("""
             <div style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; line-height: 1.6;">
-                <p style="margin: 0 0 8px 0; color: #dce3ee;">
-                    <strong style="color: #00e5ff;">1. The Failure of Training From Scratch:</strong> The Scratch U-Net baseline collapses to 18.9% Dice. With only 40 training frames, training 24M parameters from random initialization results in severe overfitting to background road textures rather than learning generic obstacle representations.
+                <p style="margin: 0 0 8px 0; color: var(--text-white);">
+                    <strong style="color: var(--cyan-primary);">1. The Failure of Training From Scratch:</strong> The Scratch U-Net baseline collapses to 18.9% Dice. With only 40 training frames, training 24M parameters from random initialization results in severe overfitting to background road textures rather than learning generic obstacle representations.
                 </p>
-                <p style="margin: 0 0 8px 0; color: #00e475;">
-                    <strong style="color: #00e475;">2. The Dominance of Pretrained ImageNet Weights:</strong> Initializing the encoder with ImageNet-pretrained ResNet-34 weights delivers a massive leap (+213% relative Dice gain). Pre-converged low-level filters (Gabor edges, high-contrast textures, chromatic gradients) generalize immediately to unknown road hazards.
+                <p style="margin: 0 0 8px 0; color: var(--emerald-tertiary);">
+                    <strong style="color: var(--emerald-tertiary);">2. The Dominance of Pretrained ImageNet Weights:</strong> Initializing the encoder with ImageNet-pretrained ResNet-34 weights delivers a massive leap (+213% relative Dice gain). Pre-converged low-level filters (Gabor edges, high-contrast textures, chromatic gradients) generalize immediately to unknown road hazards.
                 </p>
-                <p style="margin: 0 0 8px 0; color: #94a3b8;">
-                    <strong style="color: #94a3b8;">3. Precision Gains from TTA and Morphological Filtering:</strong> Test-Time Augmentation (horizontal flip averaging) cancels camera viewpoint asymmetries, while 3x3 morphological opening/closing eliminates stray false-positive specks. This elevates precision to 76.10%—the highest precision in the entire benchmark.
+                <p style="margin: 0 0 8px 0; color: var(--text-outline);">
+                    <strong style="color: var(--text-outline);">3. Precision Gains from TTA and Morphological Filtering:</strong> Test-Time Augmentation (horizontal flip averaging) cancels camera viewpoint asymmetries, while 3x3 morphological opening/closing eliminates stray false-positive specks. This elevates precision to 76.10%—the highest precision in the entire benchmark.
                 </p>
-                <p style="margin: 0; color: #ff9100;">
-                    <strong style="color: #ff9100;">4. Multi-Objective Combo Loss Synergy:</strong> The composite loss (BCE + Dice + Focal) solves the 9:1 class imbalance. BCE ensures well-calibrated posterior probabilities, Soft Dice directly maximizes contour overlap, and Focal Loss (gamma=2) downweights trivial background road pixels to concentrate gradient updates on difficult obstacle boundaries.
+                <p style="margin: 0; color: var(--amber-warn);">
+                    <strong style="color: var(--amber-warn);">4. Multi-Objective Combo Loss Synergy:</strong> The composite loss (BCE + Dice + Focal) solves the 9:1 class imbalance. BCE ensures well-calibrated posterior probabilities, Soft Dice directly maximizes contour overlap, and Focal Loss (gamma=2) downweights trivial background road pixels to concentrate gradient updates on difficult obstacle boundaries.
                 </p>
             </div>
             """)
@@ -1457,20 +1673,20 @@ with tab1:
     with ch_right:
         render_html("""
         <div class="wb-panel-header">
-            <span><span class="material-symbols-outlined" style="font-size: 15px; color: #00e475; margin-right: 6px;">radar</span>Dashboard 3 // Holistic 6-Axis Radar Tradeoff</span>
-            <span style="color: #00e5ff; font-size: 10px; background: rgba(0,229,255,0.12); padding: 1px 6px; border-radius: 3px;">Interactive</span>
+            <span><span class="material-symbols-outlined" style="font-size: 15px; color: var(--emerald-tertiary); margin-right: 6px;">radar</span>Dashboard 3 // Holistic 6-Axis Radar Tradeoff</span>
+            <span style="color: var(--cyan-primary); font-size: 10px; background: var(--stat-prod-bg); padding: 1px 6px; border-radius: 3px;">Interactive</span>
         </div>
-        <div style="background: #12272a; border-left: 1px solid #20474b; border-right: 1px solid #20474b; padding: 0.45rem 0.85rem; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #8dc8ce;">
+        <div style="background: var(--bg-card-high); border-left: 1px solid var(--border-teal); border-right: 1px solid var(--border-teal); padding: 0.45rem 0.85rem; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--text-muted);">
             <strong>Description:</strong> Radar projection evaluating the multi-objective operational envelope across 6 key metrics: Test IoU, Dice F1, Precision, Recall, AUROC, and Precision-Recall AP.
         </div>
         """)
         radar_axes = ["Test IoU", "Test Dice (F1)", "Precision", "Recall", "AUROC", "AUPRC (AP)"]
         fig_radar = go.Figure()
         radar_specs = [
-            (0, "ResNet-34 + TTA (Prod)", "#00e5ff", "rgba(0, 229, 255, 0.22)"),
-            (1, "Hybrid Ensemble", "#00e475", "rgba(0, 228, 117, 0.15)"),
-            (4, "Conv Autoencoder", "#94a3b8", "rgba(148, 163, 184, 0.14)"),
-            (5, "Scratch U-Net Baseline", "#ff1744", "rgba(255, 23, 68, 0.10)")
+            (0, "ResNet-34 + TTA (Prod)", PALETTE["cyan"], PALETTE["radar_fill_cyan"]),
+            (1, "Hybrid Ensemble", PALETTE["emerald"], PALETTE["radar_fill_emerald"]),
+            (4, "Conv Autoencoder", PALETTE["grey"], PALETTE["radar_fill_grey"]),
+            (5, "Scratch U-Net Baseline", PALETTE["red"], PALETTE["radar_fill_red"])
         ]
         for r_idx, r_name, r_col, r_fill in radar_specs:
             r_vals = [float(suite["benchmark_df"].iloc[r_idx][ax_m]) for ax_m in radar_axes]
@@ -1485,9 +1701,9 @@ with tab1:
             ))
         fig_radar.update_layout(
             polar=dict(
-                bgcolor="#0b1618",
-                radialaxis=dict(visible=True, range=[0, 1.0], gridcolor="#20474b", linecolor="#20474b"),
-                angularaxis=dict(gridcolor="#20474b", linecolor="#20474b")
+                bgcolor=PALETTE["bg_plot"],
+                radialaxis=dict(visible=True, range=[0, 1.0], gridcolor=PALETTE["border"], linecolor=PALETTE["border"]),
+                angularaxis=dict(gridcolor=PALETTE["border"], linecolor=PALETTE["border"])
             )
         )
         apply_dark_plotly_theme(fig_radar, height=310)
@@ -1496,14 +1712,14 @@ with tab1:
         with st.expander("Click to view Dashboard 3 Interpretation: Multi-Axis Envelope & Architectural Synergy", expanded=False):
             render_html("""
             <div style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; line-height: 1.6;">
-                <p style="margin: 0 0 8px 0; color: #dce3ee;">
-                    <strong style="color: #00e5ff;">1. Envelope Coverage &amp; Balance:</strong> The cyan polygon (ResNet-34 + TTA) encompasses the largest well-rounded operational area, establishing it as the most balanced architecture for real-world automated driving deployment.
+                <p style="margin: 0 0 8px 0; color: var(--text-white);">
+                    <strong style="color: var(--cyan-primary);">1. Envelope Coverage &amp; Balance:</strong> The cyan polygon (ResNet-34 + TTA) encompasses the largest well-rounded operational area, establishing it as the most balanced architecture for real-world automated driving deployment.
                 </p>
-                <p style="margin: 0 0 8px 0; color: #94a3b8;">
+                <p style="margin: 0 0 8px 0; color: var(--text-outline);">
                     <strong style="color: #94a3b8;">2. The Precision vs. Recall Tradeoff:</strong> The unsupervised ConvAutoencoder achieves broad AUROC coverage (88.7%) because it flags any pixel with reconstruction error. However, without semantic supervision, its boundaries are diffuse, resulting in lower precision (33.2%). ResNet-34 provides the necessary crisp boundary delineation.
                 </p>
-                <p style="margin: 0; color: #00e475;">
-                    <strong style="color: #00e475;">3. Hybrid Ensemble Defense-in-Depth:</strong> The green polygon (Hybrid Ensemble) achieves the highest AUROC (89.66%) and Recall (80.08%). In safety-critical AV perception stacks, combining supervised discriminative segmentors with unsupervised reconstruction residuals provides defensive redundancy against edge cases and unforeseen anomaly classes.
+                <p style="margin: 0; color: var(--emerald-tertiary);">
+                    <strong style="color: var(--emerald-tertiary);">3. Hybrid Ensemble Defense-in-Depth:</strong> The green polygon (Hybrid Ensemble) achieves the highest AUROC (89.66%) and Recall (80.08%). In safety-critical AV perception stacks, combining supervised discriminative segmentors with unsupervised reconstruction residuals provides defensive redundancy against edge cases and unforeseen anomaly classes.
                 </p>
             </div>
             """)
@@ -1515,10 +1731,10 @@ with tab1:
     # ---------------------------------------------------------------------
     render_html("""
     <div class="wb-panel-header">
-        <span><span class="material-symbols-outlined" style="font-size: 15px; color: #00e5ff; margin-right: 6px;">table_chart</span>Dashboard 4 // Quantitative Diagnostic Matrix (All 6 Validated Configurations)</span>
-        <span style="color: #8dc8ce; font-size: 10.5px;">Sorted by: <strong>Test Dice / mIoU (Desc)</strong></span>
+        <span><span class="material-symbols-outlined" style="font-size: 15px; color: var(--cyan-primary); margin-right: 6px;">table_chart</span>Dashboard 4 // Quantitative Diagnostic Matrix (All 6 Validated Configurations)</span>
+        <span style="color: var(--text-muted); font-size: 10.5px;">Sorted by: <strong>Test Dice / mIoU (Desc)</strong></span>
     </div>
-    <div style="background: #12272a; border-left: 1px solid #20474b; border-right: 1px solid #20474b; padding: 0.45rem 0.85rem; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #8dc8ce;">
+    <div style="background: var(--bg-card-high); border-left: 1px solid var(--border-teal); border-right: 1px solid var(--border-teal); padding: 0.45rem 0.85rem; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--text-muted);">
         <strong>Description:</strong> Full audit table compiling quantitative validation results across all 6 pipelines on the 10 unseen RoadAnomaly test frames (9.22M pixels). Tracks loss objectives, calibrated decision thresholds (tau*), boundary overlap, false alarm rates at 95% recall, and edge inference latencies.
     </div>
     """)
@@ -1528,28 +1744,28 @@ with tab1:
         st_label = row["Status"]
         if st_label == "CURRENT PROD":
             badge_cls = "status-prod"
-            dot_col = "#00e5ff"
+            dot_col = PALETTE["cyan"]
         elif st_label == "CANDIDATE":
             badge_cls = "status-cand"
-            dot_col = "#00e475"
+            dot_col = PALETTE["emerald"]
         elif st_label == "LEGACY BASELINE":
             badge_cls = "status-base"
-            dot_col = "#ff1744"
+            dot_col = PALETTE["red"]
         else:
             badge_cls = "status-stby"
-            dot_col = "#8dc8ce"
+            dot_col = PALETTE["grey"]
 
         rows_html += (
             f'<tr>'
-            f'<td style="font-weight: 600; color: #ffffff;"><span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:{dot_col}; margin-right:8px;"></span>{row["Variant"]}</td>'
-            f'<td style="color: #8dc8ce;">{row["Loss"]}</td>'
-            f'<td style="color: #00e5ff; font-weight: 700;">{row["Test IoU"]*100:.2f}%</td>'
-            f'<td style="color: #00e475; font-weight: 700;">{row["Test Dice (F1)"]:.4f}</td>'
+            f'<td style="font-weight: 600; color: var(--text-white);"><span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:{dot_col}; margin-right:8px;"></span>{row["Variant"]}</td>'
+            f'<td style="color: var(--text-muted);">{row["Loss"]}</td>'
+            f'<td style="color: var(--cyan-primary); font-weight: 700;">{row["Test IoU"]*100:.2f}%</td>'
+            f'<td style="color: var(--emerald-tertiary); font-weight: 700;">{row["Test Dice (F1)"]:.4f}</td>'
             f'<td>{row["AUROC"]*100:.2f}%</td>'
             f'<td>{row["AUPRC (AP)"]*100:.2f}%</td>'
             f'<td>{row["Precision"]*100:.2f}% / {row["Recall"]*100:.2f}%</td>'
             f'<td>{row["FPR@95%TPR"]*100:.2f}%</td>'
-            f'<td style="color: #00e475;">{row["Latency (ms)"]:.1f} ms</td>'
+            f'<td style="color: var(--emerald-tertiary);">{row["Latency (ms)"]:.1f} ms</td>'
             f'<td style="text-align: right;"><span class="{badge_cls}">{st_label}</span></td>'
             f'</tr>'
         )
@@ -1581,11 +1797,11 @@ with tab1:
     with st.expander("Click to view Dashboard 4 Interpretation: Production Deployment Decision & Safety Rationale", expanded=False):
         render_html("""
         <div style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; line-height: 1.6;">
-            <p style="margin: 0 0 8px 0; color: #dce3ee;">
-                <strong style="color: #00e5ff;">1. Justification for 'ResNet-34 + TTA + Morph' as CURRENT PROD:</strong> Although the Hybrid Ensemble achieves a fractional AUROC edge (89.66% vs 89.02%), ResNet-34 + TTA delivers higher precision (76.10% vs 74.92%) and executes in 14.2 ms (70.4 FPS) compared to 18.6 ms for the dual-network ensemble. In automotive systems, precision and deterministic latency are prioritized to prevent phantom braking.
+            <p style="margin: 0 0 8px 0; color: var(--text-white);">
+                <strong style="color: var(--cyan-primary);">1. Justification for 'ResNet-34 + TTA + Morph' as CURRENT PROD:</strong> Although the Hybrid Ensemble achieves a fractional AUROC edge (89.66% vs 89.02%), ResNet-34 + TTA delivers higher precision (76.10% vs 74.92%) and executes in 14.2 ms (70.4 FPS) compared to 18.6 ms for the dual-network ensemble. In automotive systems, precision and deterministic latency are prioritized to prevent phantom braking.
             </p>
-            <p style="margin: 0 0 8px 0; color: #00e475;">
-                <strong style="color: #00e475;">2. The Safety-Critical FPR@95%TPR Metric:</strong> Under ISO 26262 ASIL-D functional safety testing, perception models are evaluated at 95% True Positive Rate (catching 95% of real hazards). At this operating point, the scratch U-Net triggers false alarms on 90.1% of benign road pixels, rendering it useless. ResNet-34 + TTA reduces false alarms to 23.4%—a 4-fold reduction in false alarm rate.
+            <p style="margin: 0 0 8px 0; color: var(--emerald-tertiary);">
+                <strong style="color: var(--emerald-tertiary);">2. The Safety-Critical FPR@95%TPR Metric:</strong> Under ISO 26262 ASIL-D functional safety testing, perception models are evaluated at 95% True Positive Rate (catching 95% of real hazards). At this operating point, the scratch U-Net triggers false alarms on 90.1% of benign road pixels, rendering it useless. ResNet-34 + TTA reduces false alarms to 23.4%—a 4-fold reduction in false alarm rate.
             </p>
             <p style="margin: 0; color: #b0c6ff;">
                 <strong style="color: #b0c6ff;">3. Real-Time Embedded Feasibility:</strong> Standard automotive cameras operate at 30 FPS (33.3 ms per frame). With an inference latency of 14.2 ms, ResNet-34 + TTA leaves 19.1 ms of processing headroom for downstream temporal Kalman tracking, sensor fusion with radar/lidar, and path planning maneuvers.
@@ -1679,24 +1895,24 @@ with tab2:
         render_html(f"""
         <div class="aeb-alert-box">
             <div style="display: flex; align-items: flex-start; gap: 0.85rem;">
-                <span class="material-symbols-outlined" style="font-size: 28px; color: #ff1744;">emergency_home</span>
+                <span class="material-symbols-outlined" style="font-size: 28px; color: var(--red-error);">emergency_home</span>
                 <div>
                     <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
-                        <span style="font-family: 'Space Grotesk', sans-serif; font-size: 0.98rem; font-weight: 700; color: #ffffff; text-transform: uppercase;">
+                        <span style="font-family: 'Space Grotesk', sans-serif; font-size: 0.98rem; font-weight: 700; color: var(--text-white); text-transform: uppercase;">
                             AEB SAFETY CRITICAL ALERT: Dynamic Hazard in Trajectory
                         </span>
-                        <span style="padding: 2px 7px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; background: #ff1744; color: #ffffff;">
+                        <span style="padding: 2px 7px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; background: #ff1744; color: var(--text-white);">
                             TTC: {ttc_sec:.2f}s
                         </span>
                     </div>
-                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: #ffdad6; margin-top: 4px;">
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: var(--alert-box-text); margin-top: 4px;">
                         Est. Obstacle Distance: <strong>{est_dist_m} meters</strong> | Predicted Hazard Area: <strong>{pred_area_pct:.2f}%</strong> (GT: {active_row['anomaly_ratio_pct']:.2f}%) | Peak Confidence: <strong>{peak_conf:.3f}</strong> | Live Latency: <strong>{infer_ms:.1f} ms</strong>
                     </div>
                 </div>
             </div>
             <div style="display: flex; align-items: center; gap: 0.5rem; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
-                <span style="padding: 0.4rem 0.75rem; border-radius: 4px; background: #ff1744; color: #ffffff; font-weight: 700;">FORCE EMERGENCY DECEL (0.8g)</span>
-                <span style="padding: 0.4rem 0.75rem; border-radius: 4px; background: #142e31; border: 1px solid #20474b; color: #ffffff;">INCIDENT {sel_frame_id}</span>
+                <span style="padding: 0.4rem 0.75rem; border-radius: 4px; background: #ff1744; color: var(--text-white); font-weight: 700;">FORCE EMERGENCY DECEL (0.8g)</span>
+                <span style="padding: 0.4rem 0.75rem; border-radius: 4px; background: var(--bg-card-high); border: 1px solid var(--border-teal); color: var(--text-white);">INCIDENT {sel_frame_id}</span>
             </div>
         </div>
         """)
@@ -1706,7 +1922,7 @@ with tab2:
             <div style="display: flex; align-items: flex-start; gap: 0.85rem;">
                 <span class="material-symbols-outlined" style="font-size: 26px; color: #ff9100;">warning</span>
                 <div>
-                    <div style="font-family: 'Space Grotesk', sans-serif; font-size: 0.95rem; font-weight: 700; color: #ffffff; text-transform: uppercase;">
+                    <div style="font-family: 'Space Grotesk', sans-serif; font-size: 0.95rem; font-weight: 700; color: var(--text-white); text-transform: uppercase;">
                         PERCEPTION CAUTION: Small / Distant Road Obstacle Detected
                     </div>
                     <div style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: #ffe0b2; margin-top: 4px;">
@@ -1719,27 +1935,27 @@ with tab2:
     else:
         render_html(f"""
         <div class="aeb-nominal-box">
-            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: #8dc8ce;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: var(--text-muted);">
                 <strong>SUB-THRESHOLD ACTIVATION</strong> — Predicted Area: {pred_area_pct:.2f}% at τ = {decision_tau:.2f} (GT Area: {active_row['anomaly_ratio_pct']:.2f}%). Lower Decision Threshold (τ) in the sidebar to increase sensitivity.
             </div>
         </div>
         """)
 
     render_html(f"""
-    <div style="background: #0f2224; border: 1px solid #20474b; padding: 0.6rem 1rem; border-radius: 4px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.85rem; font-family: 'JetBrains Mono', monospace; font-size: 11.5px;">
+    <div style="background: var(--bg-panel); border: 1px solid var(--border-teal); padding: 0.6rem 1rem; border-radius: 4px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.85rem; font-family: 'JetBrains Mono', monospace; font-size: 11.5px;">
         <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
-            <span style="color: #00e5ff; font-weight: 700;">FRAME: {sel_frame_id} / {sel_fname}</span>
-            <span style="color: #2e656b;">|</span>
-            <span style="color: #8dc8ce;">Partition: <strong style="color: #ffffff;">{active_row['split']}</strong></span>
-            <span style="color: #2e656b;">|</span>
-            <span style="color: #8dc8ce;">Category: <strong style="color: #ffffff;">{active_row['category']}</strong></span>
-            <span style="color: #2e656b;">|</span>
-            <span style="color: #8dc8ce;">Active Model: <strong style="color: #00e475;">{selected_paradigm_label}</strong></span>
+            <span style="color: var(--cyan-primary); font-weight: 700;">FRAME: {sel_frame_id} / {sel_fname}</span>
+            <span style="color: var(--border-bright);">|</span>
+            <span style="color: var(--text-muted);">Partition: <strong style="color: var(--text-white);">{active_row['split']}</strong></span>
+            <span style="color: var(--border-bright);">|</span>
+            <span style="color: var(--text-muted);">Category: <strong style="color: var(--text-white);">{active_row['category']}</strong></span>
+            <span style="color: var(--border-bright);">|</span>
+            <span style="color: var(--text-muted);">Active Model: <strong style="color: var(--emerald-tertiary);">{selected_paradigm_label}</strong></span>
         </div>
-        <div style="color: #8dc8ce;">
-            Dice (F1): <strong style="color: #00e475;">{m_frame['dice']*100:.1f}%</strong> &nbsp;|&nbsp;
-            IoU: <strong style="color: #00e5ff;">{m_frame['iou']*100:.1f}%</strong> &nbsp;|&nbsp;
-            Acc: <strong style="color: #ffffff;">{m_frame['accuracy']*100:.2f}%</strong>
+        <div style="color: var(--text-muted);">
+            Dice (F1): <strong style="color: var(--emerald-tertiary);">{m_frame['dice']*100:.1f}%</strong> &nbsp;|&nbsp;
+            IoU: <strong style="color: var(--cyan-primary);">{m_frame['iou']*100:.1f}%</strong> &nbsp;|&nbsp;
+            Acc: <strong style="color: var(--text-white);">{m_frame['accuracy']*100:.2f}%</strong>
         </div>
     </div>
     """)
@@ -1754,30 +1970,30 @@ with tab2:
         with g_r1c1:
             render_html("""
             <div class="wb-panel-header">
-                <span><span class="material-symbols-outlined" style="font-size: 15px; color: #00e5ff; margin-right: 6px;">videocam</span>1. Front Center Camera (1280x720 HD -> 384x512 Rectified)</span>
-                <span style="color: #8dc8ce; font-size: 10px;">CAM_0_FRONT_NFOV // RGB</span>
+                <span><span class="material-symbols-outlined" style="font-size: 15px; color: var(--cyan-primary); margin-right: 6px;">videocam</span>1. Front Center Camera (1280x720 HD -> 384x512 Rectified)</span>
+                <span style="color: var(--text-muted); font-size: 10px;">CAM_0_FRONT_NFOV // RGB</span>
             </div>
             """)
             st.image(cam_display_img, width="stretch")
             render_html("""
             <div class="wb-panel-footer">
                 <span>Format: WEBP -> Normalized Tensor [1, 3, 384, 512]</span>
-                <span style="color: #00e5ff;">Nominal Exposure</span>
+                <span style="color: var(--cyan-primary);">Nominal Exposure</span>
             </div>
             """)
 
         with g_r1c2:
             render_html("""
             <div class="wb-panel-header">
-                <span><span class="material-symbols-outlined" style="font-size: 15px; color: #00e475; margin-right: 6px;">check_circle</span>2. Ground-Truth Anomaly Segmentation Mask</span>
-                <span style="color: #00e475; font-size: 10px;">Human Expert Labeled (EPFL LabelGrab)</span>
+                <span><span class="material-symbols-outlined" style="font-size: 15px; color: var(--emerald-tertiary); margin-right: 6px;">check_circle</span>2. Ground-Truth Anomaly Segmentation Mask</span>
+                <span style="color: var(--emerald-tertiary); font-size: 10px;">Human Expert Labeled (EPFL LabelGrab)</span>
             </div>
             """)
             st.image(gt_sil_img, width="stretch")
             render_html(f"""
             <div class="wb-panel-footer">
                 <span>Hazard Area: {gt_area_px:,} px ({active_row['anomaly_ratio_pct']:.2f}% frame)</span>
-                <span style="color: #00e475;">Polygon Verified</span>
+                <span style="color: var(--emerald-tertiary);">Polygon Verified</span>
             </div>
             """)
 
@@ -1786,23 +2002,23 @@ with tab2:
             hit_str = "YES" if px_counts["TP"] > 0 else "NO"
             render_html(f"""
             <div class="wb-panel-header">
-                <span><span class="material-symbols-outlined" style="font-size: 15px; color: #00e5ff; margin-right: 6px;">blur_on</span>3. Predicted Anomaly Probability Heatmap ({selected_paradigm_label.split(' ')[0]})</span>
-                <span style="color: #00e5ff; font-size: 10px;">Peak Conf: {peak_conf:.3f}</span>
+                <span><span class="material-symbols-outlined" style="font-size: 15px; color: var(--cyan-primary); margin-right: 6px;">blur_on</span>3. Predicted Anomaly Probability Heatmap ({selected_paradigm_label.split(' ')[0]})</span>
+                <span style="color: var(--cyan-primary); font-size: 10px;">Peak Conf: {peak_conf:.3f}</span>
             </div>
             """)
             st.image(heatmap_img, width="stretch")
             render_html(f"""
             <div class="wb-panel-footer">
                 <span>Threshold: τ = {decision_tau:.2f} (TTA: {'ON' if enable_tta else 'OFF'} | Morph: {'ON' if enable_morph else 'OFF'})</span>
-                <span style="color: #00e5ff; font-weight: 700;">Detection Hit: {hit_str}</span>
+                <span style="color: var(--cyan-primary); font-weight: 700;">Detection Hit: {hit_str}</span>
             </div>
             """)
 
         with g_r2c2:
             render_html(f"""
             <div class="wb-panel-header">
-                <span><span class="material-symbols-outlined" style="font-size: 15px; color: #00e475; margin-right: 6px;">difference</span>4. Pixel-Level Confusion Decomposition Map</span>
-                <span style="color: #00e475; font-size: 10px;">Dice: {m_frame['dice']:.3f} | IoU: {m_frame['iou']:.3f}</span>
+                <span><span class="material-symbols-outlined" style="font-size: 15px; color: var(--emerald-tertiary); margin-right: 6px;">difference</span>4. Pixel-Level Confusion Decomposition Map</span>
+                <span style="color: var(--emerald-tertiary); font-size: 10px;">Dice: {m_frame['dice']:.3f} | IoU: {m_frame['iou']:.3f}</span>
             </div>
             """)
             st.image(err_decomp_img, width="stretch")
@@ -1813,7 +2029,7 @@ with tab2:
                     <span style="color:#2979FF;">FN (Missed): {px_counts['FN']:,} px</span> &nbsp;|&nbsp;
                     <span style="color:#FF1744;">FP (Alarm): {px_counts['FP']:,} px</span>
                 </span>
-                <span>Prec: <strong style="color:#fff;">{m_frame['precision']*100:.1f}%</strong> | Rec: <strong style="color:#fff;">{m_frame['recall']*100:.1f}%</strong> | F1: <strong style="color:#00e475;">{m_frame['dice']*100:.1f}%</strong></span>
+                <span>Prec: <strong style="color:var(--text-white);">{m_frame['precision']*100:.1f}%</strong> | Rec: <strong style="color:var(--text-white);">{m_frame['recall']*100:.1f}%</strong> | F1: <strong style="color:var(--emerald-tertiary);">{m_frame['dice']*100:.1f}%</strong></span>
             </div>
             """)
 
@@ -1842,15 +2058,15 @@ with tab2:
             st.image(make_heatmap_rgb(preds["cae_unit"], "magma"), caption=f"3. Pixel L1 Residual |x - x_hat| (Mean: {preds['cae_l1_mean']:.4f})", width="stretch")
 
     render_html(f"""
-    <div style="background: #12272a; padding: 0.7rem 1rem; border-radius: 4px; border: 1px solid #20474b; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; font-family: 'JetBrains Mono', monospace; font-size: 11.5px;">
+    <div style="background: var(--bg-card-high); padding: 0.7rem 1rem; border-radius: 4px; border: 1px solid var(--border-teal); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; font-family: 'JetBrains Mono', monospace; font-size: 11.5px;">
         <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-            <span style="color: #8dc8ce;">Autoencoder Reconstruction L1 Residue: <strong style="color: #ffffff;">{preds['cae_l1_mean']:.4f} (OOD Anomaly Signal)</strong></span>
-            <span style="color: #2e656b;">|</span>
-            <span style="color: #8dc8ce;">True Positives: <strong style="color: #00e475;">{px_counts['TP']:,} px</strong></span>
-            <span style="color: #2e656b;">|</span>
-            <span style="color: #8dc8ce;">False Alarms: <strong style="color: #ff1744;">{px_counts['FP']:,} px</strong></span>
+            <span style="color: var(--text-muted);">Autoencoder Reconstruction L1 Residue: <strong style="color: var(--text-white);">{preds['cae_l1_mean']:.4f} (OOD Anomaly Signal)</strong></span>
+            <span style="color: var(--border-bright);">|</span>
+            <span style="color: var(--text-muted);">True Positives: <strong style="color: var(--emerald-tertiary);">{px_counts['TP']:,} px</strong></span>
+            <span style="color: var(--border-bright);">|</span>
+            <span style="color: var(--text-muted);">False Alarms: <strong style="color: #ff1744;">{px_counts['FP']:,} px</strong></span>
         </div>
-        <div style="color: #00e5ff;">
+        <div style="color: var(--cyan-primary);">
             Active Frame Index: {st.session_state['inspector_frame_idx'] + 1} of {len(filtered_df)}
         </div>
     </div>
@@ -1863,18 +2079,18 @@ with tab2:
 with tab3:
     render_html("""
     <div style="margin-bottom: 0.85rem;">
-        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #00e5ff; text-transform: uppercase; letter-spacing: 0.06em;">Statistical Validation &amp; Boundary Dynamics</div>
-        <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.35rem; font-weight: 700; color: #ffffff; margin: 0.15rem 0;">Full-Spectrum Anomaly Decision Curves</h2>
-        <p style="font-size: 0.8rem; color: #8dc8ce; margin: 0;">Evaluation of receiver operating characteristics, precision-recall tradeoffs under 9.85% foreground imbalance, small obstacle degradation cliffs, and threshold sensitivity.</p>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--cyan-primary); text-transform: uppercase; letter-spacing: 0.06em;">Statistical Validation &amp; Boundary Dynamics</div>
+        <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.35rem; font-weight: 700; color: var(--text-white); margin: 0.15rem 0;">Full-Spectrum Anomaly Decision Curves</h2>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">Evaluation of receiver operating characteristics, precision-recall tradeoffs under 9.85% foreground imbalance, small obstacle degradation cliffs, and threshold sensitivity.</p>
     </div>
     """)
 
     curve_specs = [
-        ("hybrid", "Hybrid Ensemble", "#00e475", "solid"),
-        ("resnet34_tta", "ResNet-34 + TTA", "#00e5ff", "solid"),
-        ("resnet34", "Transfer ResNet-34", "#38bdf8", "dot"),
-        ("baseline", "Scratch U-Net", "#94a3b8", "dash"),
-        ("cae", "Conv Autoencoder", "#ff9100", "dashdot")
+        ("hybrid", "Hybrid Ensemble", PALETTE["emerald"], "solid"),
+        ("resnet34_tta", "ResNet-34 + TTA", PALETTE["cyan"], "solid"),
+        ("resnet34", "Transfer ResNet-34", PALETTE["cyan_bright"], "dot"),
+        ("baseline", "Scratch U-Net", PALETTE["grey"], "dash"),
+        ("cae", "Conv Autoencoder", PALETTE["amber"], "dashdot")
     ]
 
     v_r1c1, v_r1c2 = st.columns(2)
@@ -1884,8 +2100,8 @@ with tab3:
         opt_t_tta = suite["optimal_thresholds"]["resnet34_tta"][0]
         render_html(f"""
         <div class="wb-panel-header">
-            <span><span class="material-symbols-outlined" style="font-size: 15px; color: #00e5ff; margin-right: 6px;">ssid_chart</span>Receiver Operating Characteristic (Best AUROC = {best_res['auroc']:.4f})</span>
-            <span style="color: #00e475; font-size: 10px;">Optimal Point τ* = {opt_t_tta:.2f}</span>
+            <span><span class="material-symbols-outlined" style="font-size: 15px; color: var(--cyan-primary); margin-right: 6px;">ssid_chart</span>Receiver Operating Characteristic (Best AUROC = {best_res['auroc']:.4f})</span>
+            <span style="color: var(--emerald-tertiary); font-size: 10px;">Optimal Point τ* = {opt_t_tta:.2f}</span>
         </div>
         """)
         fig_roc = go.Figure()
@@ -1898,7 +2114,7 @@ with tab3:
             ))
         fig_roc.add_trace(go.Scatter(
             x=[0, 1], y=[0, 1], mode="lines", name="Random Chance (0.5000)",
-            line=dict(color="#3b494c", width=1.2, dash="dash")
+            line=dict(color=PALETTE["border"], width=1.2, dash="dash")
         ))
         fig_roc.update_layout(xaxis_title="False Positive Rate (FPR)", yaxis_title="True Positive Rate (TPR / Recall)")
         apply_dark_plotly_theme(fig_roc, height=310)
@@ -1907,8 +2123,8 @@ with tab3:
     with v_r1c2:
         render_html(f"""
         <div class="wb-panel-header">
-            <span><span class="material-symbols-outlined" style="font-size: 15px; color: #00e475; margin-right: 6px;">tune</span>Precision-Recall Curve (Best AUPRC = {best_res['auprc']:.4f})</span>
-            <span style="color: #8dc8ce; font-size: 10px;">Class Imbalance ({suite['pos_ratio']*100:.2f}% Positive)</span>
+            <span><span class="material-symbols-outlined" style="font-size: 15px; color: var(--emerald-tertiary); margin-right: 6px;">tune</span>Precision-Recall Curve (Best AUPRC = {best_res['auprc']:.4f})</span>
+            <span style="color: var(--text-muted); font-size: 10px;">Class Imbalance ({suite['pos_ratio']*100:.2f}% Positive)</span>
         </div>
         """)
         fig_pr = go.Figure()
@@ -1919,7 +2135,7 @@ with tab3:
                 name=f"{lbl} ({res['auprc']:.4f})",
                 line=dict(color=c_hex, width=2.4 if d_style == "solid" else 1.6, dash=d_style)
             ))
-        fig_pr.add_hline(y=suite["pos_ratio"], line_dash="dash", line_color="#6a7889", annotation_text=f"No-Skill ({suite['pos_ratio']:.4f})")
+        fig_pr.add_hline(y=suite["pos_ratio"], line_dash="dash", line_color=PALETTE["grey"], annotation_text=f"No-Skill ({suite['pos_ratio']:.4f})")
         fig_pr.update_layout(xaxis_title="Recall (Sensitivity)", yaxis_title="Precision (PPV)")
         apply_dark_plotly_theme(fig_pr, height=310)
         st.plotly_chart(fig_pr, width="stretch")
@@ -1948,15 +2164,15 @@ with tab3:
             mode="markers+lines",
             name="ResNet-34 + TTA Dice",
             text=p_df["Filename"] + " (" + p_df["Category"] + ")",
-            marker=dict(size=10, color="#00e5ff", line=dict(color="#ffffff", width=1)),
-            line=dict(color="rgba(0, 229, 255, 0.45)", width=2)
+            marker=dict(size=10, color=PALETTE["cyan"], line=dict(color=PALETTE["text"], width=1)),
+            line=dict(color=PALETTE["radar_fill_cyan"], width=2)
         ))
         fig_scale.add_trace(go.Scatter(
             x=p_df["Anomaly Area (%)"],
             y=p_df["Baseline Dice"],
             mode="markers",
             name="Scratch U-Net Dice",
-            marker=dict(size=7, color="#ff1744", symbol="diamond")
+            marker=dict(size=7, color=PALETTE["red"], symbol="diamond")
         ))
         fig_scale.update_layout(xaxis_title="Ground Truth Anomaly Area (% of Frame)", yaxis_title="Test Segmentation Dice (F1)", yaxis=dict(range=[0, 1.05]))
         apply_dark_plotly_theme(fig_scale, height=310)
@@ -1965,8 +2181,8 @@ with tab3:
     with v_r2c2:
         render_html("""
         <div class="wb-panel-header">
-            <span><span class="material-symbols-outlined" style="font-size: 15px; color: #00e5ff; margin-right: 6px;">candlestick_chart</span>Decision Threshold Sweep (τ in [0.05, 0.95])</span>
-            <span style="color: #00e5ff; font-size: 10px;">F1 Optimization vs. False Alarm Rate</span>
+            <span><span class="material-symbols-outlined" style="font-size: 15px; color: var(--cyan-primary); margin-right: 6px;">candlestick_chart</span>Decision Threshold Sweep (τ in [0.05, 0.95])</span>
+            <span style="color: var(--cyan-primary); font-size: 10px;">F1 Optimization vs. False Alarm Rate</span>
         </div>
         """)
         fig_sweep = go.Figure()
@@ -1975,24 +2191,24 @@ with tab3:
             y=suite["calibration_curves"]["resnet34_tta"],
             mode="lines",
             name="ResNet-34+TTA Val F1",
-            line=dict(color="#00e5ff", width=2.8)
+            line=dict(color=PALETTE["cyan"], width=2.8)
         ))
         fig_sweep.add_trace(go.Scatter(
             x=suite["thresholds"],
             y=suite["calibration_curves"]["hybrid"],
             mode="lines",
             name="Hybrid Ensemble Val F1",
-            line=dict(color="#00e475", width=2.2, dash="dot")
+            line=dict(color=PALETTE["emerald"], width=2.2, dash="dot")
         ))
         fig_sweep.add_trace(go.Scatter(
             x=suite["thresholds"],
             y=suite["far_curves"]["resnet34_tta"],
             mode="lines",
             name="False Alarm Rate (FPR)",
-            line=dict(color="#ff1744", width=2.0, dash="dash")
+            line=dict(color=PALETTE["red"], width=2.0, dash="dash")
         ))
-        fig_sweep.add_vline(x=decision_tau, line_dash="dash", line_color="#ffffff", annotation_text=f"Active τ={decision_tau:.2f}")
-        fig_sweep.add_vline(x=opt_t_tta, line_dash="solid", line_color="#00e475", annotation_text=f"Calibrated τ*={opt_t_tta:.2f}")
+        fig_sweep.add_vline(x=decision_tau, line_dash="dash", line_color=PALETTE["text"], annotation_text=f"Active τ={decision_tau:.2f}")
+        fig_sweep.add_vline(x=opt_t_tta, line_dash="solid", line_color=PALETTE["emerald"], annotation_text=f"Calibrated τ*={opt_t_tta:.2f}")
         fig_sweep.update_layout(xaxis_title="Decision Threshold (τ)", yaxis_title="Validation Score / Rate", yaxis=dict(range=[0, 0.9]))
         apply_dark_plotly_theme(fig_sweep, height=310)
         st.plotly_chart(fig_sweep, width="stretch")
@@ -2007,9 +2223,9 @@ with tab3:
 with tab4:
     render_html("""
     <div style="margin-bottom: 0.85rem;">
-        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #00e5ff; text-transform: uppercase; letter-spacing: 0.06em;">Exploratory Data Analysis // Database Architecture, Obstacle Taxonomy &amp; Anomaly Root Causes</div>
-        <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.35rem; font-weight: 700; color: #ffffff; margin: 0.15rem 0;">RoadAnomaly Database Explorer &amp; Obstacle Cause Diagnostics</h2>
-        <p style="font-size: 0.8rem; color: #8dc8ce; margin: 0;">Exhaustive pixel-level audit of all 60 driving scenes (1280x720 HD, 55,296,000 pixels), stratified across 5 hazard taxonomies, with interactive photometric/structural analysis of what triggers or camouflages each road anomaly.</p>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--cyan-primary); text-transform: uppercase; letter-spacing: 0.06em;">Exploratory Data Analysis // Database Architecture, Obstacle Taxonomy &amp; Anomaly Root Causes</div>
+        <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.35rem; font-weight: 700; color: var(--text-white); margin: 0.15rem 0;">RoadAnomaly Database Explorer &amp; Obstacle Cause Diagnostics</h2>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">Exhaustive pixel-level audit of all 60 driving scenes (1280x720 HD, 55,296,000 pixels), stratified across 5 hazard taxonomies, with interactive photometric/structural analysis of what triggers or camouflages each road anomaly.</p>
     </div>
     """)
 
@@ -2028,7 +2244,7 @@ with tab4:
         <div class="wb-kpi-card">
             <div class="wb-kpi-header">
                 <span>TOTAL BENCHMARK SCENES</span>
-                <span class="material-symbols-outlined" style="font-size: 18px; color: #00e5ff;">perm_media</span>
+                <span class="material-symbols-outlined" style="font-size: 18px; color: var(--cyan-primary);">perm_media</span>
             </div>
             <div class="wb-kpi-value">60 Frames</div>
             <div class="wb-kpi-delta">
@@ -2043,7 +2259,7 @@ with tab4:
         <div class="wb-kpi-card">
             <div class="wb-kpi-header">
                 <span>TOTAL PIXELS AUDITED</span>
-                <span class="material-symbols-outlined" style="font-size: 18px; color: #00e475;">grid_on</span>
+                <span class="material-symbols-outlined" style="font-size: 18px; color: var(--emerald-tertiary);">grid_on</span>
             </div>
             <div class="wb-kpi-value">55.30 M</div>
             <div class="wb-kpi-delta">
@@ -2095,18 +2311,18 @@ with tab4:
         render_html("""
         <div class="wb-panel-header">
             <span>1. Global Pixel Class Imbalance</span>
-            <span style="color: #00e5ff; font-size: 10px;">55.3M Pixels</span>
+            <span style="color: var(--cyan-primary); font-size: 10px;">55.3M Pixels</span>
         </div>
         """)
         fig_donut = go.Figure(data=[go.Pie(
             labels=["Nominal Roadway (Class 0)", "Hazard Obstacles (Class 2->1)"],
             values=[bg_px, anom_px],
             hole=0.62,
-            marker_colors=["#20474b", "#00e5ff"],
+            marker_colors=[PALETTE["border"], PALETTE["cyan"]],
             textinfo="percent"
         )])
         fig_donut.update_layout(
-            annotations=[dict(text=f"<b>{bg_pct_global:.1f}%</b><br>Roadway", x=0.5, y=0.5, font_size=12, showarrow=False, font_color="#ffffff")]
+            annotations=[dict(text=f"<b>{bg_pct_global:.1f}%</b><br>Roadway", x=0.5, y=0.5, font_size=12, showarrow=False, font_color=PALETTE["text"])]
         )
         apply_dark_plotly_theme(fig_donut, height=290)
         st.plotly_chart(fig_donut, width="stretch")
@@ -2115,13 +2331,13 @@ with tab4:
         render_html("""
         <div class="wb-panel-header">
             <span>2. Stratified Split Across 5 Hazard Taxonomies</span>
-            <span style="color: #00e475; font-size: 10px;">40 Train / 10 Val / 10 Test</span>
+            <span style="color: var(--emerald-tertiary); font-size: 10px;">40 Train / 10 Val / 10 Test</span>
         </div>
         """)
         split_counts_df = df_meta.groupby(["category", "split"]).size().reset_index(name="count")
         cat_order = ["Animals", "Obstacles/Rocks", "Traffic Cones", "Lost Tires", "Unusual Vehicles"]
         fig_splits = go.Figure()
-        for sp_name, sp_col in [("TRAIN", "#00e5ff"), ("VAL", "#94a3b8"), ("TEST", "#00e475")]:
+        for sp_name, sp_col in [("TRAIN", PALETTE["cyan"]), ("VAL", PALETTE["grey"]), ("TEST", PALETTE["emerald"])]:
             sub_sp = split_counts_df[split_counts_df["split"] == sp_name]
             y_vals = [int(sub_sp[sub_sp["category"] == c]["count"].sum()) for c in cat_order]
             fig_splits.add_trace(go.Bar(
@@ -2151,7 +2367,7 @@ with tab4:
             points="all",
             hover_data=["filename", "split", "num_instances"],
             category_orders={"category": cat_order},
-            color_discrete_sequence=["#00e5ff", "#00e475", "#ff9100", "#94a3b8", "#ff1744"]
+            color_discrete_sequence=[PALETTE["cyan"], PALETTE["emerald"], PALETTE["amber"], PALETTE["grey"], PALETTE["red"]]
         )
         fig_box.update_layout(
             showlegend=False,
@@ -2175,7 +2391,7 @@ with tab4:
         ).reset_index().sort_values(by="Mean_Dice", ascending=False)
 
         total_cat_counts = df_meta["category"].value_counts().to_dict()
-        bar_colors = ["#00e5ff", "#6ff6fb", "#00e475", "#ff9100", "#ff1744"]
+        bar_colors = [PALETTE["cyan"], PALETTE["cyan_bright"], PALETTE["emerald"], PALETTE["amber"], PALETTE["red"]]
 
         bars_html = ""
         for idx_c, (_, r_cat) in enumerate(cat_summary.iterrows()):
@@ -2187,7 +2403,7 @@ with tab4:
             bars_html += (
                 f'<div style="margin-bottom: 0.65rem;">'
                 f'<div style="display: flex; justify-content: space-between; font-family: \'JetBrains Mono\', monospace; font-size: 11.5px;">'
-                f'<span style="color: #ffffff; font-weight: 500;">{c_name} (Total n={n_tot} | Test n={int(r_cat["Test_Count"])})</span>'
+                f'<span style="color: var(--text-white); font-weight: 500;">{c_name} (Total n={n_tot} | Test n={int(r_cat["Test_Count"])})</span>'
                 f'<span style="color: {b_col}; font-weight: 700;">{c_dice_pct:.1f}% Dice / {c_iou_pct:.1f}% IoU</span>'
                 f'</div>'
                 f'<div class="cat-bar-bg">'
@@ -2200,14 +2416,14 @@ with tab4:
         render_html(f"""
         <div class="wb-panel" style="height: 100%; margin-bottom: 0;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; font-family: 'JetBrains Mono', monospace;">
-                <span style="font-size: 12px; font-weight: 700; color: #ffffff; text-transform: uppercase;">Per-Category Test Detection Performance</span>
-                <span style="font-size: 11px; color: #00e475;">Mean Test Dice: {suite['benchmark_df'].iloc[0]['Test Dice (F1)']*100:.2f}%</span>
+                <span style="font-size: 12px; font-weight: 700; color: var(--text-white); text-transform: uppercase;">Per-Category Test Detection Performance</span>
+                <span style="font-size: 11px; color: var(--emerald-tertiary);">Mean Test Dice: {suite['benchmark_df'].iloc[0]['Test Dice (F1)']*100:.2f}%</span>
             </div>
-            <p style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #6a7889; margin-bottom: 1rem;">Unseen test partition performance across all 5 obstacle classes</p>
+            <p style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-outline); margin-bottom: 1rem;">Unseen test partition performance across all 5 obstacle classes</p>
             {bars_html}
-            <div style="margin-top: 1rem; padding: 0.6rem 0.85rem; background: #142e31; border: 1px solid #20474b; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; display: flex; justify-content: space-between;">
-                <span style="color: #8dc8ce;">Hardest Class: <strong style="color: #ffffff;">{hardest_row['Category']} (Small Scale &amp; Texture Camouflage)</strong></span>
-                <span style="color: #00e5ff;">100% OOD Hazards</span>
+            <div style="margin-top: 1rem; padding: 0.6rem 0.85rem; background: var(--bg-card-high); border: 1px solid var(--border-teal); border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; display: flex; justify-content: space-between;">
+                <span style="color: var(--text-muted);">Hardest Class: <strong style="color: var(--text-white);">{hardest_row['Category']} (Small Scale &amp; Texture Camouflage)</strong></span>
+                <span style="color: var(--cyan-primary);">100% OOD Hazards</span>
             </div>
         </div>
         """)
@@ -2215,8 +2431,8 @@ with tab4:
     with eda_r2c2:
         render_html("""
         <div class="wb-panel-header">
-            <span><span class="material-symbols-outlined" style="font-size: 15px; color: #00e5ff; margin-right: 6px;">psychology</span>Obstacle Taxonomy &amp; What Causes the Anomaly (Physical &amp; Visual Root-Cause Matrix)</span>
-            <span style="color: #8dc8ce; font-size: 10px;">Why Obstacles Trigger or Evade Detection</span>
+            <span><span class="material-symbols-outlined" style="font-size: 15px; color: var(--cyan-primary); margin-right: 6px;">psychology</span>Obstacle Taxonomy &amp; What Causes the Anomaly (Physical &amp; Visual Root-Cause Matrix)</span>
+            <span style="color: var(--text-muted); font-size: 10px;">Why Obstacles Trigger or Evade Detection</span>
         </div>
         """)
 
@@ -2261,11 +2477,11 @@ with tab4:
 
             tax_rows_html += (
                 f'<tr>'
-                f'<td style="font-weight: 700; color: #00e5ff;">{c_name}<div style="font-size:10px; color:#6a7889; font-weight:400;">{ck["examples"]}</div></td>'
-                f'<td><strong>{n_frames}</strong> ({share_pct:.1f}%)<div style="font-size:10px; color:#8dc8ce;">Avg {mean_inst:.1f} obj/frame</div></td>'
-                f'<td><strong style="color:#00e475;">{mean_area:.2f}%</strong><div style="font-size:10px; color:#8dc8ce;">[{min_area:.2f}% - {max_area:.2f}%]</div></td>'
-                f'<td style="font-size: 11px; color: #f8fafc;">{ck["trigger"]}</td>'
-                f'<td style="font-size: 11px; color: #ffdad6;">{ck["challenge"]}</td>'
+                f'<td style="font-weight: 700; color: var(--cyan-primary);">{c_name}<div style="font-size:10px; color:var(--text-outline); font-weight:400;">{ck["examples"]}</div></td>'
+                f'<td><strong>{n_frames}</strong> ({share_pct:.1f}%)<div style="font-size:10px; color:var(--text-muted);">Avg {mean_inst:.1f} obj/frame</div></td>'
+                f'<td><strong style="color:var(--emerald-tertiary);">{mean_area:.2f}%</strong><div style="font-size:10px; color:var(--text-muted);">[{min_area:.2f}% - {max_area:.2f}%]</div></td>'
+                f'<td style="font-size: 11px; color: var(--text-white);">{ck["trigger"]}</td>'
+                f'<td style="font-size: 11px; color: var(--red-dark);">{ck["challenge"]}</td>'
                 f'</tr>'
             )
 
@@ -2295,8 +2511,8 @@ with tab4:
     # =====================================================================
     render_html("""
     <div class="wb-panel-header">
-        <span><span class="material-symbols-outlined" style="font-size: 15px; color: #00e475; margin-right: 6px;">biotech</span>Interactive Single-Scene Obstacle &amp; Anomaly Root-Cause Inspector (All 60 Database Scenes)</span>
-        <span style="color: #00e5ff; font-size: 10px;">Select any scene to inspect its GrabCut instances, RGB contrast vs. road, and Sobel edge energy</span>
+        <span><span class="material-symbols-outlined" style="font-size: 15px; color: var(--emerald-tertiary); margin-right: 6px;">biotech</span>Interactive Single-Scene Obstacle &amp; Anomaly Root-Cause Inspector (All 60 Database Scenes)</span>
+        <span style="color: var(--cyan-primary); font-size: 10px;">Select any scene to inspect its GrabCut instances, RGB contrast vs. road, and Sobel edge energy</span>
     </div>
     """)
 
@@ -2372,29 +2588,29 @@ with tab4:
 
         render_html(f"""
         <div class="wb-panel" style="margin-bottom: 0;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #20474b; padding-bottom: 0.5rem; margin-bottom: 0.65rem; font-family: 'JetBrains Mono', monospace;">
-                <span style="font-size: 12px; font-weight: 700; color: #00e5ff;">OBSTACLE BIOPHYSICAL &amp; PHOTOMETRIC SIGNATURE // {eda_row['frame_id']}</span>
-                <span style="font-size: 10.5px; color: #00e475; background: rgba(0,228,117,0.12); padding: 2px 7px; border-radius: 3px;">{cause_stats['difficulty']}</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-teal); padding-bottom: 0.5rem; margin-bottom: 0.65rem; font-family: 'JetBrains Mono', monospace;">
+                <span style="font-size: 12px; font-weight: 700; color: var(--cyan-primary);">OBSTACLE BIOPHYSICAL &amp; PHOTOMETRIC SIGNATURE // {eda_row['frame_id']}</span>
+                <span style="font-size: 10.5px; color: var(--emerald-tertiary); background: var(--stat-cand-bg); padding: 2px 7px; border-radius: 3px;">{cause_stats['difficulty']}</span>
             </div>
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; font-family: 'JetBrains Mono', monospace; font-size: 11px; margin-bottom: 0.75rem;">
-                <div style="background: #12272a; border: 1px solid #20474b; padding: 0.55rem; border-radius: 4px;">
-                    <span style="color: #8dc8ce; font-size: 10px; display: block;">COLOR CONTRAST (DELTA-RGB)</span>
-                    <span style="color: #ffffff; font-size: 1.15rem; font-weight: 700;">{cause_stats['rgb_delta_l2']:.1f} L2</span>
-                    <span style="color: #6a7889; font-size: 9.5px; display: block;">Obs RGB({fg_r:.0f},{fg_g:.0f},{fg_b:.0f}) vs Road({bg_r:.0f},{bg_g:.0f},{bg_b:.0f})</span>
+                <div style="background: var(--bg-card-high); border: 1px solid var(--border-teal); padding: 0.55rem; border-radius: 4px;">
+                    <span style="color: var(--text-muted); font-size: 10px; display: block;">COLOR CONTRAST (DELTA-RGB)</span>
+                    <span style="color: var(--text-white); font-size: 1.15rem; font-weight: 700;">{cause_stats['rgb_delta_l2']:.1f} L2</span>
+                    <span style="color: var(--text-outline); font-size: 9.5px; display: block;">Obs RGB({fg_r:.0f},{fg_g:.0f},{fg_b:.0f}) vs Road({bg_r:.0f},{bg_g:.0f},{bg_b:.0f})</span>
                 </div>
-                <div style="background: #12272a; border: 1px solid #20474b; padding: 0.55rem; border-radius: 4px;">
-                    <span style="color: #8dc8ce; font-size: 10px; display: block;">SOBEL EDGE RATIO</span>
-                    <span style="color: #00e5ff; font-size: 1.15rem; font-weight: 700;">{cause_stats['edge_ratio']:.2f}x Road</span>
-                    <span style="color: #6a7889; font-size: 9.5px; display: block;">Obs Grad: {cause_stats['fg_edge_energy']:.3f} | Road: {cause_stats['bg_edge_energy']:.3f}</span>
+                <div style="background: var(--bg-card-high); border: 1px solid var(--border-teal); padding: 0.55rem; border-radius: 4px;">
+                    <span style="color: var(--text-muted); font-size: 10px; display: block;">SOBEL EDGE RATIO</span>
+                    <span style="color: var(--cyan-primary); font-size: 1.15rem; font-weight: 700;">{cause_stats['edge_ratio']:.2f}x Road</span>
+                    <span style="color: var(--text-outline); font-size: 9.5px; display: block;">Obs Grad: {cause_stats['fg_edge_energy']:.3f} | Road: {cause_stats['bg_edge_energy']:.3f}</span>
                 </div>
-                <div style="background: #12272a; border: 1px solid #20474b; padding: 0.55rem; border-radius: 4px;">
-                    <span style="color: #8dc8ce; font-size: 10px; display: block;">BOTTLENECK SURVIVAL (STRIDE 32)</span>
-                    <span style="color: #00e475; font-size: 1.15rem; font-weight: 700;">{feat_w} x {feat_h} cells</span>
-                    <span style="color: #6a7889; font-size: 9.5px; display: block;">HD {cause_stats['bbox_w']}x{cause_stats['bbox_h']}px -> Input {net_w}x{net_h}px</span>
+                <div style="background: var(--bg-card-high); border: 1px solid var(--border-teal); padding: 0.55rem; border-radius: 4px;">
+                    <span style="color: var(--text-muted); font-size: 10px; display: block;">BOTTLENECK SURVIVAL (STRIDE 32)</span>
+                    <span style="color: var(--emerald-tertiary); font-size: 1.15rem; font-weight: 700;">{feat_w} x {feat_h} cells</span>
+                    <span style="color: var(--text-outline); font-size: 9.5px; display: block;">HD {cause_stats['bbox_w']}x{cause_stats['bbox_h']}px -> Input {net_w}x{net_h}px</span>
                 </div>
             </div>
-            <div style="background: #142e31; border-left: 3px solid #00e5ff; padding: 0.6rem 0.85rem; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #f8fafc;">
-                <strong style="color: #00e5ff;">Why This Obstacle Causes an Anomaly Signal:</strong> {cause_stats['cause_summary']}
+            <div style="background: var(--bg-card-high); border-left: 3px solid var(--cyan-primary); padding: 0.6rem 0.85rem; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-white);">
+                <strong style="color: var(--cyan-primary);">Why This Obstacle Causes an Anomaly Signal:</strong> {cause_stats['cause_summary']}
             </div>
         </div>
         """)
@@ -2403,7 +2619,7 @@ with tab4:
         render_html("""
         <div class="wb-panel-header">
             <span>Photometric Luminance Distribution (Obstacle Pixels vs. Road Background)</span>
-            <span style="color: #8dc8ce; font-size: 10px;">Intensity [0-255]</span>
+            <span style="color: var(--text-muted); font-size: 10px;">Intensity [0-255]</span>
         </div>
         """)
         fg_lum = eda_rgb_hd[eda_sem_hd > 0.5].mean(axis=1)
@@ -2416,7 +2632,7 @@ with tab4:
         fig_hist.add_trace(go.Histogram(
             x=bg_sub,
             name="Normal Roadway (Class 0)",
-            marker_color="#2e656b",
+            marker_color=PALETTE["grey"],
             opacity=0.65,
             histnorm="probability density",
             nbinsx=40
@@ -2424,7 +2640,7 @@ with tab4:
         fig_hist.add_trace(go.Histogram(
             x=fg_sub,
             name="Anomaly Obstacle (Class 2)",
-            marker_color="#00e5ff",
+            marker_color=PALETTE["cyan"],
             opacity=0.75,
             histnorm="probability density",
             nbinsx=40
@@ -2445,7 +2661,7 @@ with tab4:
     gal_hdr_c1, gal_hdr_c2, gal_hdr_c3 = st.columns([5, 4, 3])
     with gal_hdr_c1:
         render_html("""
-        <div style="font-family: 'Space Grotesk', sans-serif; font-size: 1.05rem; font-weight: 700; color: #ffffff; padding-top: 4px;">
+        <div style="font-family: 'Space Grotesk', sans-serif; font-size: 1.05rem; font-weight: 700; color: var(--text-white); padding-top: 4px;">
             Multi-Scene Category Gallery Browser (8 Representative Scenes)
         </div>
         """)
@@ -2498,11 +2714,11 @@ with tab4:
                 thumb_vis = A.Resize(270, 480)(image=g_vis)["image"]
                 st.image(thumb_vis, width="stretch")
                 render_html(f"""
-                <div style="background: #12272a; border: 1px solid #20474b; padding: 0.5rem 0.65rem; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; margin-bottom: 0.6rem;">
-                    <div style="font-weight: 700; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{r_item['frame_id']} [{r_item['split']}] // {r_item['filename'][:22]}</div>
-                    <div style="display: flex; justify-content: space-between; margin-top: 4px; color: #8dc8ce;">
+                <div style="background: var(--bg-card-high); border: 1px solid var(--border-teal); padding: 0.5rem 0.65rem; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; margin-bottom: 0.6rem;">
+                    <div style="font-weight: 700; color: var(--text-white); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{r_item['frame_id']} [{r_item['split']}] // {r_item['filename'][:22]}</div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 4px; color: var(--text-muted);">
                         <span>{r_item['category']} ({r_item['num_instances']} obj)</span>
-                        <span style="color: #00e5ff; font-weight: 700;">Area: {r_item['anomaly_ratio_pct']}%</span>
+                        <span style="color: var(--cyan-primary); font-weight: 700;">Area: {r_item['anomaly_ratio_pct']}%</span>
                     </div>
                 </div>
                 """)
@@ -2527,9 +2743,9 @@ with tab4:
 with tab5:
     render_html("""
     <div style="margin-bottom: 0.85rem;">
-        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #00e5ff; text-transform: uppercase; letter-spacing: 0.06em;">Edge Compute Telemetry // Profiling Engine</div>
-        <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.35rem; font-weight: 700; color: #ffffff; margin: 0.15rem 0;">Hardware Profiling &amp; Live Custom Inference</h2>
-        <p style="font-size: 0.8rem; color: #8dc8ce; margin: 0;">Real-time latency breakdown across PyTorch / CUDA execution stages and live single-frame out-of-distribution dashcam ingestion.</p>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--cyan-primary); text-transform: uppercase; letter-spacing: 0.06em;">Edge Compute Telemetry // Profiling Engine</div>
+        <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.35rem; font-weight: 700; color: var(--text-white); margin: 0.15rem 0;">Hardware Profiling &amp; Live Custom Inference</h2>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">Real-time latency breakdown across PyTorch / CUDA execution stages and live single-frame out-of-distribution dashcam ingestion.</p>
     </div>
     """)
 
@@ -2539,7 +2755,7 @@ with tab5:
         render_html("""
         <div class="wb-panel-header">
             <span>st.file_uploader // Ingest Drive Frame</span>
-            <span style="color: #8dc8ce; font-size: 10px;">.png, .jpg, .webp</span>
+            <span style="color: var(--text-muted); font-size: 10px;">.png, .jpg, .webp</span>
         </div>
         """)
         uploaded_file = st.file_uploader(
@@ -2548,14 +2764,14 @@ with tab5:
             label_visibility="collapsed"
         )
         render_html(f"""
-        <div style="background: #0f2224; border: 1px solid #20474b; border-radius: 4px; padding: 0.75rem 1rem; font-family: 'JetBrains Mono', monospace; font-size: 11px; margin-top: 0.5rem;">
+        <div style="background: var(--bg-panel); border: 1px solid var(--border-teal); border-radius: 4px; padding: 0.75rem 1rem; font-family: 'JetBrains Mono', monospace; font-size: 11px; margin-top: 0.5rem;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                <span style="color: #6a7889;">Current Buffer:</span>
-                <span style="color: #ffffff;">{uploaded_file.name if uploaded_file else 'test_stream_buffer.webp'}</span>
+                <span style="color: var(--text-outline);">Current Buffer:</span>
+                <span style="color: var(--text-white);">{uploaded_file.name if uploaded_file else 'test_stream_buffer.webp'}</span>
             </div>
             <div style="display: flex; justify-content: space-between;">
-                <span style="color: #6a7889;">Target Tensor Shape:</span>
-                <span style="color: #00e5ff;">1 x 3 x 384 x 512 (FP32)</span>
+                <span style="color: var(--text-outline);">Target Tensor Shape:</span>
+                <span style="color: var(--cyan-primary);">1 x 3 x 384 x 512 (FP32)</span>
             </div>
         </div>
         """)
@@ -2586,40 +2802,40 @@ with tab5:
         render_html(f"""
         <div class="wb-panel" style="margin-bottom: 0;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; font-family: 'JetBrains Mono', monospace;">
-                <span style="font-size: 12px; font-weight: 700; color: #ffffff; text-transform: uppercase;">{hw_tag} Micro-Benchmark Execution Trace</span>
-                <span style="font-size: 10px; color: #00e5ff; background: rgba(0,229,255,0.15); padding: 2px 7px; border-radius: 3px;">PYTORCH {torch.__version__.split('+')[0]}</span>
+                <span style="font-size: 12px; font-weight: 700; color: var(--text-white); text-transform: uppercase;">{hw_tag} Micro-Benchmark Execution Trace</span>
+                <span style="font-size: 10px; color: var(--cyan-primary); background: var(--stat-prod-bg); padding: 2px 7px; border-radius: 3px;">PYTORCH {torch.__version__.split('+')[0]}</span>
             </div>
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 1.1rem; font-family: 'JetBrains Mono', monospace; text-align: center;">
-                <div style="background: #12272a; border: 1px solid #20474b; border-radius: 4px; padding: 0.65rem;">
-                    <span style="font-size: 10px; color: #8dc8ce; display: block;">MODEL PARAMS</span>
-                    <span style="font-size: 1.45rem; font-weight: 700; color: #00e5ff; display: block; margin-top: 2px;">24.44 M</span>
-                    <div class="cat-bar-bg" style="height: 5px; margin-bottom: 0;"><div style="width: 72%; height: 100%; background: #00e5ff;"></div></div>
+                <div style="background: var(--bg-card-high); border: 1px solid var(--border-teal); border-radius: 4px; padding: 0.65rem;">
+                    <span style="font-size: 10px; color: var(--text-muted); display: block;">MODEL PARAMS</span>
+                    <span style="font-size: 1.45rem; font-weight: 700; color: var(--cyan-primary); display: block; margin-top: 2px;">24.44 M</span>
+                    <div class="cat-bar-bg" style="height: 5px; margin-bottom: 0;"><div style="width: 72%; height: 100%; background: var(--cyan-primary);"></div></div>
                 </div>
-                <div style="background: #12272a; border: 1px solid #20474b; border-radius: 4px; padding: 0.65rem;">
-                    <span style="font-size: 10px; color: #8dc8ce; display: block;">WEIGHTS FOOTPRINT</span>
-                    <span style="font-size: 1.45rem; font-weight: 700; color: #ffffff; display: block; margin-top: 2px;">97.9 MB</span>
-                    <div class="cat-bar-bg" style="height: 5px; margin-bottom: 0;"><div style="width: 42%; height: 100%; background: #00e475;"></div></div>
+                <div style="background: var(--bg-card-high); border: 1px solid var(--border-teal); border-radius: 4px; padding: 0.65rem;">
+                    <span style="font-size: 10px; color: var(--text-muted); display: block;">WEIGHTS FOOTPRINT</span>
+                    <span style="font-size: 1.45rem; font-weight: 700; color: var(--text-white); display: block; margin-top: 2px;">97.9 MB</span>
+                    <div class="cat-bar-bg" style="height: 5px; margin-bottom: 0;"><div style="width: 42%; height: 100%; background: var(--emerald-tertiary);"></div></div>
                 </div>
-                <div style="background: #12272a; border: 1px solid #20474b; border-radius: 4px; padding: 0.65rem;">
-                    <span style="font-size: 10px; color: #8dc8ce; display: block;">FRAME LATENCY</span>
-                    <span style="font-size: 1.45rem; font-weight: 700; color: #00e475; display: block; margin-top: 2px;">{lat_ms:.1f} ms</span>
-                    <div class="cat-bar-bg" style="height: 5px; margin-bottom: 0;"><div style="width: 35%; height: 100%; background: #00e475;"></div></div>
+                <div style="background: var(--bg-card-high); border: 1px solid var(--border-teal); border-radius: 4px; padding: 0.65rem;">
+                    <span style="font-size: 10px; color: var(--text-muted); display: block;">FRAME LATENCY</span>
+                    <span style="font-size: 1.45rem; font-weight: 700; color: var(--emerald-tertiary); display: block; margin-top: 2px;">{lat_ms:.1f} ms</span>
+                    <div class="cat-bar-bg" style="height: 5px; margin-bottom: 0;"><div style="width: 35%; height: 100%; background: var(--emerald-tertiary);"></div></div>
                 </div>
             </div>
             <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px;">
-                <div style="color: #ffffff; font-weight: 600; margin-bottom: 0.5rem;">Stage-by-Stage Latency Budget (Total: {lat_ms:.1f} ms)</div>
-                <div style="display: flex; justify-content: space-between; color: #8dc8ce;"><span>1. Tensor Preprocessor (Resize 384x512 + ImageNet Norm)</span><span style="color:#fff;">{lat_ms*0.11:.2f} ms (11.0%)</span></div>
+                <div style="color: var(--text-white); font-weight: 600; margin-bottom: 0.5rem;">Stage-by-Stage Latency Budget (Total: {lat_ms:.1f} ms)</div>
+                <div style="display: flex; justify-content: space-between; color: var(--text-muted);"><span>1. Tensor Preprocessor (Resize 384x512 + ImageNet Norm)</span><span style="color:var(--text-white);">{lat_ms*0.11:.2f} ms (11.0%)</span></div>
                 <div class="cat-bar-bg" style="height: 7px;"><div style="width: 11%; height: 100%; background: #94a3b8;"></div></div>
-                <div style="display: flex; justify-content: space-between; color: #8dc8ce;"><span>2. Pre-trained ResNet-34 Residual Backbone Encoder</span><span style="color:#00e5ff; font-weight:700;">{lat_ms*0.61:.2f} ms (61.0%)</span></div>
-                <div class="cat-bar-bg" style="height: 7px;"><div style="width: 61%; height: 100%; background: #00e5ff;"></div></div>
-                <div style="display: flex; justify-content: space-between; color: #8dc8ce;"><span>3. U-Net Skip-Connection Decoder &amp; Classification Head</span><span style="color:#fff;">{lat_ms*0.21:.2f} ms (21.0%)</span></div>
-                <div class="cat-bar-bg" style="height: 7px;"><div style="width: 21%; height: 100%; background: #00e475;"></div></div>
-                <div style="display: flex; justify-content: space-between; color: #8dc8ce;"><span>4. 3x3 Morphological Post-Processing Filter</span><span style="color:#fff;">{lat_ms*0.07:.2f} ms (7.0%)</span></div>
+                <div style="display: flex; justify-content: space-between; color: var(--text-muted);"><span>2. Pre-trained ResNet-34 Residual Backbone Encoder</span><span style="color:var(--cyan-primary); font-weight:700;">{lat_ms*0.61:.2f} ms (61.0%)</span></div>
+                <div class="cat-bar-bg" style="height: 7px;"><div style="width: 61%; height: 100%; background: var(--cyan-primary);"></div></div>
+                <div style="display: flex; justify-content: space-between; color: var(--text-muted);"><span>3. U-Net Skip-Connection Decoder &amp; Classification Head</span><span style="color:var(--text-white);">{lat_ms*0.21:.2f} ms (21.0%)</span></div>
+                <div class="cat-bar-bg" style="height: 7px;"><div style="width: 21%; height: 100%; background: var(--emerald-tertiary);"></div></div>
+                <div style="display: flex; justify-content: space-between; color: var(--text-muted);"><span>4. 3x3 Morphological Post-Processing Filter</span><span style="color:var(--text-white);">{lat_ms*0.07:.2f} ms (7.0%)</span></div>
                 <div class="cat-bar-bg" style="height: 7px;"><div style="width: 7%; height: 100%; background: #6a7889;"></div></div>
             </div>
-            <div style="margin-top: 0.75rem; padding: 0.6rem 0.85rem; background: rgba(0, 228, 117, 0.10); border: 1px solid rgba(0, 228, 117, 0.35); border-radius: 4px; display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 11.5px;">
-                <span style="color: #00e475;">Throughput: <strong>{fps_live:.1f} FPS</strong> (Headroom &gt; 30 FPS Autonomous Perception Target)</span>
-                <span style="color: #ffffff; font-weight: 700;">Real-Time Safe</span>
+            <div style="margin-top: 0.75rem; padding: 0.6rem 0.85rem; background: var(--stat-cand-bg); border: 1px solid var(--stat-cand-border); border-radius: 4px; display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 11.5px;">
+                <span style="color: var(--emerald-tertiary);">Throughput: <strong>{fps_live:.1f} FPS</strong> (Headroom &gt; 30 FPS Autonomous Perception Target)</span>
+                <span style="color: var(--text-white); font-weight: 700;">Real-Time Safe</span>
             </div>
         </div>
         """)
@@ -2636,7 +2852,7 @@ with tab5:
         render_html(f"""
         <div class="wb-panel-header">
             <span>Live Ingested Frame Diagnostics // {uploaded_file.name}</span>
-            <span style="color: #00e5ff;">Predicted Hazard Coverage: {c_cov:.2f}% at τ = {decision_tau:.2f}</span>
+            <span style="color: var(--cyan-primary);">Predicted Hazard Coverage: {c_cov:.2f}% at τ = {decision_tau:.2f}</span>
         </div>
         """)
         u1, u2, u3, u4 = st.columns(4)
@@ -2656,12 +2872,12 @@ with tab5:
 render_html(f"""
 <div class="wb-footer">
     <div style="display: flex; align-items: center; gap: 0.5rem;">
-        <span style="width: 8px; height: 8px; border-radius: 50%; background: #00e475; display: inline-block;"></span>
+        <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--emerald-tertiary); display: inline-block;"></span>
         <span>Streamlit Workbench Engine // Connected to Python Kernel (PyTorch {torch.__version__})</span>
     </div>
     <div style="display: flex; align-items: center; gap: 1.25rem;">
-        <span>Active Experiment: <strong style="color: #ffffff;">road_anomaly_resnet34_combo_loss_v2</strong></span>
-        <span style="color: #00e5ff;">EPFL RoadAnomaly Benchmark (ICCV 2019)</span>
+        <span>Active Experiment: <strong style="color: var(--text-white);">road_anomaly_resnet34_combo_loss_v2</strong></span>
+        <span style="color: var(--cyan-primary);">EPFL RoadAnomaly Benchmark (ICCV 2019)</span>
     </div>
 </div>
 """)
