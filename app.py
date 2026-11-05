@@ -679,12 +679,17 @@ def load_models():
     tl_ckpt = os.path.join(CKPT_DIR, "transfer_resnet34_unet_best.pth")
     cae_ckpt = os.path.join(CKPT_DIR, "convautoencoder_best.pth")
 
-    if os.path.exists(b_ckpt):
-        baseline_net.load_state_dict(torch.load(b_ckpt, map_location=device, weights_only=True))
-    if os.path.exists(tl_ckpt):
-        transfer_net.load_state_dict(torch.load(tl_ckpt, map_location=device, weights_only=True))
-    if os.path.exists(cae_ckpt):
-        autoencoder.load_state_dict(torch.load(cae_ckpt, map_location=device, weights_only=True))
+    def safe_load_weights(model, ckpt_path):
+        if os.path.exists(ckpt_path):
+            try:
+                state = torch.load(ckpt_path, map_location=device, weights_only=True)
+            except Exception:
+                state = torch.load(ckpt_path, map_location=device)
+            model.load_state_dict(state)
+
+    safe_load_weights(baseline_net, b_ckpt)
+    safe_load_weights(transfer_net, tl_ckpt)
+    safe_load_weights(autoencoder, cae_ckpt)
 
     baseline_net.eval()
     transfer_net.eval()
